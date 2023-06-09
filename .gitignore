@@ -1,3 +1,7 @@
 /*.zip
 /*.tar
 /dist
+/darwin-*/*
+/linux-*/*
+/win32-*/*
+/staging/*
