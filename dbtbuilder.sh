@@ -3,36 +3,36 @@
 # Script to collect all the necessary elements for use in building
 # DelugeFirmware source code and modify them appropriately.
 
-VERSION="5"
+VERSION="6"
 
 DARWIN_LABEL="darwin"
 DARWIN_PYTHON_LABEL="apple-darwin"
 DARWIN_TOOLCHAIN_ARCH="x86_64"
-DARWIN_OPENOCD_ARCH="x64"
+DARWIN_XPACK_ARCH="x64"
 DARWIN_PYTHON_ARCH="x86_64"
 DARWIN_PATH="${DARWIN_LABEL}-${DARWIN_TOOLCHAIN_ARCH}"
 DARWIN_EXTENSION=".tar.bz2"
-DARWIN_OPENOCD_EXT=".tar.gz"
+DARWIN_XPACK_EXT=".tar.gz"
 DARWIN_PYTHON_EXT=".tar.gz"
 
 LINUX_LABEL="linux"
 LINUX_PYTHON_LABEL="unknown-linux-gnu"
 LINUX_TOOLCHAIN_ARCH="x86_64"
-LINUX_OPENOCD_ARCH="x64"
+LINUX_XPACK_ARCH="x64"
 LINUX_PYTHON_ARCH="x86_64"
 LINUX_PATH="${LINUX_LABEL}-${LINUX_TOOLCHAIN_ARCH}"
 LINUX_EXTENSION=".tar.bz2"
-LINUX_OPENOCD_EXT=".tar.gz"
+LINUX_XPACK_EXT=".tar.gz"
 LINUX_PYTHON_EXT=".tar.gz"
 
 WIN32_LABEL="win32"
 WIN32_PYTHON_LABEL="pc-windows-msvc-static"
 WIN32_TOOLCHAIN_ARCH="x86_64"
-WIN32_OPENOCD_ARCH="x64"
+WIN32_XPATH_ARCH="x64"
 WIN32_PYTHON_ARCH="x86_64"
 WIN32_PATH="${WIN32_LABEL}-${WIN32_TOOLCHAIN_ARCH}"
 WIN32_EXTENSION=".zip"
-WIN32_OPENOCD_EXT=".zip"
+WIN32_XPACK_EXT=".zip"
 WIN32_PYTHON_EXT=".tar.gz"
 
 OSYSTEMS=( "${DARWIN_LABEL}" "${LINUX_LABEL}" "${WIN32_LABEL}" )
@@ -43,7 +43,8 @@ STAGING_PATH="staging"
 TOOLCHAIN_VERSION="9-2019-q4-major"
 TOOLCHAIN_REMOTE_PATH="https://developer.arm.com/-/media/Files/downloads/gnu-rm/9-2019q4"
 
-OPENOCD_VERSION="0.12.0-1"
+XPACK_TOOLS=( "openocd" "cmake" )
+XPACK_VERSIONS=( "0.12.0-1" "3.23.5-1" )
 
 PYTHON_VERSION_TAG="20230507"
 PYTHON_VERSION="3.10.11"
@@ -120,7 +121,7 @@ unzip_archive()
 fetch_tools () {
     for os_label in ${OSYSTEMS[@]}; do
         os_toolchain_arch=""
-        os_openocd_arch=""
+        os_xpack_arch=""
         if [ $os_label == $DARWIN_LABEL ]; then
             os_toolchain_arch=$DARWIN_TOOLCHAIN_ARCH
             os_extension=$DARWIN_EXTENSION
@@ -128,8 +129,8 @@ fetch_tools () {
             os_toolchain_md5="241b64f0578db2cf146034fc5bcee3d4"
             os_dest_path="${DARWIN_PATH}"
 
-            os_openocd_arch=$DARWIN_OPENOCD_ARCH
-            os_openocd_ext=$DARWIN_OPENOCD_EXT
+            os_xpack_arch=$DARWIN_XPACK_ARCH
+            os_xpack_ext=$DARWIN_XPACK_EXT
 
             os_python_label=$DARWIN_PYTHON_LABEL
             os_python_arch=$DARWIN_PYTHON_ARCH
@@ -141,8 +142,8 @@ fetch_tools () {
             os_toolchain_md5="fe0029de4f4ec43cf7008944e34ff8cc"
             os_dest_path="${LINUX_PATH}"
 
-            os_openocd_arch=$LINUX_OPENOCD_ARCH
-            os_openocd_ext=$LINUX_OPENOCD_EXT
+            os_xpack_arch=$LINUX_XPACK_ARCH
+            os_xpack_ext=$LINUX_XPACK_EXT
 
             os_python_label=$LINUX_PYTHON_LABEL
             os_python_arch=$LINUX_PYTHON_ARCH
@@ -154,8 +155,8 @@ fetch_tools () {
             os_toolchain_md5="82525522fefbde0b7811263ee8172b10"
             os_dest_path="${WIN32_PATH}"
 
-            os_openocd_arch=$WIN32_OPENOCD_ARCH
-            os_openocd_ext=$WIN32_OPENOCD_EXT
+            os_xpack_arch=$WIN32_XPATH_ARCH
+            os_xpack_ext=$WIN32_XPACK_EXT
 
             os_python_label=$WIN32_PYTHON_LABEL
             os_python_arch=$WIN32_PYTHON_ARCH
@@ -197,38 +198,45 @@ fetch_tools () {
             fi
         fi
 
-        if [ $os_openocd_arch != "" ]; then
-            os_openocd_path="https://github.com/xpack-dev-tools/openocd-xpack/releases/download/v${OPENOCD_VERSION}/xpack-openocd-${OPENOCD_VERSION}-${os_label}-${os_openocd_arch}${os_openocd_ext}"
+        if [ $os_xpack_arch != "" ]; then
+            for (( i=0; i<${#XPACK_TOOLS[@]}; i++ )); do
+                os_xpack_tool="${XPACK_TOOLS[$i]}";
+                os_xpack_version="${XPACK_VERSIONS[$i]}";
+                xpack_tool_path="https://github.com/xpack-dev-tools/${os_xpack_tool}-xpack/releases/download/v${os_xpack_version}/xpack-${os_xpack_tool}-${os_xpack_version}-${os_label}-${os_xpack_arch}${os_xpack_ext}";
+                
+                xpack_tar="$(basename "${xpack_tool_path}")";
+                check_downloaded_file "${xpack_tar}";
 
-            # echo "${os_openocd_path}"
-            openocd_tar="$(basename "${os_openocd_path}")";
-            check_downloaded_file "${openocd_tar}";
+                if [ $? -eq 1 ]; then
+                    echo "Downloading ${os_label}-${os_xpack_arch} xpack-${os_xpack_tool}:";
+                    dbtb_curl "${STAGING_PATH}/${xpack_tar}.part" ${xpack_tool_path} || return 1;
+                    mv "${STAGING_PATH}/${xpack_tar}.part" "${STAGING_PATH}/${xpack_tar}";
+                    echo "Fetching sha hash:";
+                    dbtb_curl "${STAGING_PATH}/${xpack_tar}.sha" "${xpack_tool_path}.sha" || return 1;
+                    cd "${STAGING_PATH}";
+                    shasum -c "${xpack_tar}.sha" || return 1;
+                    echo "sha valid!";
+                    cd ..
+                else
+                    check_downloaded_file "${xpack_tar}.sha";
+                    if [ $? -eq 1 ]; then
+                        dbtb_curl "${STAGING_PATH}/${xpack_tar}.sha" "${xpack_tool_path}.sha" || return 1;
+                    fi
+                    cd "${STAGING_PATH}";
+                    shasum -c "${xpack_tar}.sha" || return 1;
+                    echo "sha valid!";
+                    cd ..
+                fi
 
-            if [ $? -eq 1 ]; then
-                echo "Downloading ${os_label}-${os_openocd_arch} xpack-openocd:";
-                dbtb_curl "${STAGING_PATH}/${openocd_tar}.part" ${os_openocd_path} || return 1;
-                mv "${STAGING_PATH}/${openocd_tar}.part" "${STAGING_PATH}/${openocd_tar}";
-                echo "Fetching sha hash:";
-                dbtb_curl "${STAGING_PATH}/${openocd_tar}.sha" "${os_openocd_path}.sha" || return 1;
-                cd "${STAGING_PATH}";
-                shasum -c "${openocd_tar}.sha" || return 1;
-                echo "sha valid!";
-                cd ..
-            else
-                cd "${STAGING_PATH}";
-                shasum -c "${openocd_tar}.sha" || return 1;
-                echo "sha valid!";
-                cd ..
-            fi
-
-            echo "Extracting ${os_label}-${os_openocd_arch} openocd:";
-            if [ $os_openocd_ext == ".zip" ]; then
-                unzip_archive $openocd_tar $os_dest_path openocd;
-                shift_subdir_up openocd
-            else
-                untar_archive $openocd_tar $os_dest_path openocd;
-                shift_subdir_up openocd
-            fi
+                echo "Extracting ${os_label}-${os_xpack_arch} ${os_xpack_tool}:";
+                if [ $os_xpack_ext == ".zip" ]; then
+                    unzip_archive $xpack_tar $os_dest_path $os_xpack_tool;
+                    shift_subdir_up $os_xpack_tool
+                else
+                    untar_archive $xpack_tar $os_dest_path $os_xpack_tool;
+                    shift_subdir_up $os_xpack_tool
+                fi
+            done
         fi
 
         if [ $os_python_arch != "" ]; then
@@ -273,12 +281,15 @@ add_python_lib () {
     wheel_dir="${DARWIN_PATH}/python/wheel";
     mkdir -p "${wheel_dir}";
 
-    wheel_file=$($py_bin -m pip wheel -w "${wheel_dir}" $1 | tail -1 | sed -e 's/.*\/\(.*\)$/\1/') || return 1;
-    echo $wheel_file
+    wheel_files=$($py_bin -m pip wheel -w "${wheel_dir}" $1 | grep -e '\.whl$' | sed -e 's/.*\/\(.*\)$/\1/') || return 1;
     mkdir -p "${LINUX_PATH}/python/wheel";
     mkdir -p "${WIN32_PATH}/python/wheel";
-    cp "${wheel_dir}/${wheel_file}" "${LINUX_PATH}/python/wheel";
-    cp "${wheel_dir}/${wheel_file}" "${WIN32_PATH}/python/wheel";
+        
+    for wheel in ${wheel_files[@]}; do
+        echo "Including wheel: ${wheel}"
+        cp "${wheel_dir}/${wheel}" "${LINUX_PATH}/python/wheel";
+        cp "${wheel_dir}/${wheel}" "${WIN32_PATH}/python/wheel";
+    done
 }
 
 package_dist () {
@@ -315,12 +326,12 @@ package_dist () {
 mkdir -p "${STAGING_PATH}"
 
 # Fetch, verify, and extract all the required toolchain tools
-# fetch_tools
+fetch_tools
 
-# add_python_lib certifi
-# add_python_lib pip
-# add_python_lib pyserial
-# add_python_lib ansi
+add_python_lib certifi
+add_python_lib pyserial
+add_python_lib ansi
+add_python_lib SCons
 
 # DIST/PACKAGE
 mkdir -p "${DIST_PATH}"
