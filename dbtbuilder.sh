@@ -3,51 +3,46 @@
 # Script to collect all the necessary elements for use in building
 # DelugeFirmware source code and modify them appropriately.
 
-VERSION="6"
+VERSION="7"
 
 DARWIN_LABEL="darwin"
+DARWIN_TOOLCHAIN_ARCH=( "arm64" "x86_64" )
+DARWIN_XPACK_ARCH=( "arm64" "x64" )
 DARWIN_PYTHON_LABEL="apple-darwin"
-DARWIN_TOOLCHAIN_ARCH="x86_64"
-DARWIN_XPACK_ARCH="x64"
-DARWIN_PYTHON_ARCH="x86_64"
-DARWIN_PATH="${DARWIN_LABEL}-${DARWIN_TOOLCHAIN_ARCH}"
+DARWIN_PYTHON_ARCH=( "aarch64" "x86_64" )
 DARWIN_EXTENSION=".tar.bz2"
 DARWIN_XPACK_EXT=".tar.gz"
 DARWIN_PYTHON_EXT=".tar.gz"
 
 LINUX_LABEL="linux"
+LINUX_TOOLCHAIN_ARCH=( "arm64" "x86_64" )
+LINUX_XPACK_ARCH=( "arm64" "x64" )
 LINUX_PYTHON_LABEL="unknown-linux-gnu"
-LINUX_TOOLCHAIN_ARCH="x86_64"
-LINUX_XPACK_ARCH="x64"
-LINUX_PYTHON_ARCH="x86_64"
-LINUX_PATH="${LINUX_LABEL}-${LINUX_TOOLCHAIN_ARCH}"
+LINUX_PYTHON_ARCH=( "aarch64" "x86_64" )
 LINUX_EXTENSION=".tar.bz2"
 LINUX_XPACK_EXT=".tar.gz"
 LINUX_PYTHON_EXT=".tar.gz"
 
 WIN32_LABEL="win32"
+WIN32_TOOLCHAIN_ARCH=( "x86_64" )
+WIN32_XPACK_ARCH=( "x64" )
 WIN32_PYTHON_LABEL="pc-windows-msvc-static"
-WIN32_TOOLCHAIN_ARCH="x86_64"
-WIN32_XPATH_ARCH="x64"
-WIN32_PYTHON_ARCH="x86_64"
-WIN32_PATH="${WIN32_LABEL}-${WIN32_TOOLCHAIN_ARCH}"
+WIN32_PYTHON_ARCH=( "x86_64" )
 WIN32_EXTENSION=".zip"
 WIN32_XPACK_EXT=".zip"
 WIN32_PYTHON_EXT=".tar.gz"
 
 OSYSTEMS=( "${DARWIN_LABEL}" "${LINUX_LABEL}" "${WIN32_LABEL}" )
+OSYSTEMS_ARCH=( "arm64" "x86_64" )
 
 DIST_PATH="dist"
 STAGING_PATH="staging"
 
-TOOLCHAIN_VERSION="9-2019-q4-major"
-TOOLCHAIN_REMOTE_PATH="https://developer.arm.com/-/media/Files/downloads/gnu-rm/9-2019q4"
-
-XPACK_TOOLS=( "openocd" "cmake" )
-XPACK_VERSIONS=( "0.12.0-1" "3.23.5-1" )
+XPACK_TOOLS=( "arm-none-eabi-gcc" "openocd" "cmake" )
+XPACK_VERSIONS=( "12.2.1-1.2" "0.12.0-1" "3.23.5-1" )
 
 PYTHON_VERSION_TAG="20230507"
-PYTHON_VERSION="3.10.11"
+PYTHON_VERSION="3.11.3"
 
 CURL_TOOL=$(which curl)
 
@@ -120,175 +115,186 @@ unzip_archive()
 
 fetch_tools () {
     for os_label in ${OSYSTEMS[@]}; do
-        os_toolchain_arch=""
-        os_xpack_arch=""
-        if [ $os_label == $DARWIN_LABEL ]; then
-            os_toolchain_arch=$DARWIN_TOOLCHAIN_ARCH
-            os_extension=$DARWIN_EXTENSION
-            os_toolchain_path="${TOOLCHAIN_REMOTE_PATH}/gcc-arm-none-eabi-${TOOLCHAIN_VERSION}-mac${os_extension}"
-            os_toolchain_md5="241b64f0578db2cf146034fc5bcee3d4"
-            os_dest_path="${DARWIN_PATH}"
+        for os_arch in ${OSYSTEMS_ARCH[@]}; do
+            os_tc_arch="";
+            os_xpack_arch="";
+            os_python_arch="";
+            os_dest_path="";
 
-            os_xpack_arch=$DARWIN_XPACK_ARCH
-            os_xpack_ext=$DARWIN_XPACK_EXT
-
-            os_python_label=$DARWIN_PYTHON_LABEL
-            os_python_arch=$DARWIN_PYTHON_ARCH
-            os_python_ext=$DARWIN_PYTHON_EXT
-        elif [ $os_label == $LINUX_LABEL ]; then
-            os_toolchain_arch=$LINUX_TOOLCHAIN_ARCH
-            os_extension=$LINUX_EXTENSION
-            os_toolchain_path="${TOOLCHAIN_REMOTE_PATH}/gcc-arm-none-eabi-${TOOLCHAIN_VERSION}-${os_toolchain_arch}-${os_label}${os_extension}"
-            os_toolchain_md5="fe0029de4f4ec43cf7008944e34ff8cc"
-            os_dest_path="${LINUX_PATH}"
-
-            os_xpack_arch=$LINUX_XPACK_ARCH
-            os_xpack_ext=$LINUX_XPACK_EXT
-
-            os_python_label=$LINUX_PYTHON_LABEL
-            os_python_arch=$LINUX_PYTHON_ARCH
-            os_python_ext=$LINUX_PYTHON_EXT
-        elif [ $os_label == $WIN32_LABEL ]; then
-            os_toolchain_arch=$WIN32_TOOLCHAIN_ARCH
-            os_extension=$WIN32_EXTENSION
-            os_toolchain_path="${TOOLCHAIN_REMOTE_PATH}/gcc-arm-none-eabi-${TOOLCHAIN_VERSION}-${os_label}${os_extension}"
-            os_toolchain_md5="82525522fefbde0b7811263ee8172b10"
-            os_dest_path="${WIN32_PATH}"
-
-            os_xpack_arch=$WIN32_XPATH_ARCH
-            os_xpack_ext=$WIN32_XPACK_EXT
-
-            os_python_label=$WIN32_PYTHON_LABEL
-            os_python_arch=$WIN32_PYTHON_ARCH
-            os_python_ext=$WIN32_PYTHON_EXT
-        fi
-        
-        if [ $os_toolchain_arch != "" ]; then
-            toolchain_tar="$(basename "${os_toolchain_path}")";
-            check_downloaded_file "${toolchain_tar}";
-            if [ $? -eq 1 ]; then
-                echo "Downloading ${os_label}-${os_toolchain_arch} toolchain:";
-                dbtb_curl "${STAGING_PATH}/${toolchain_tar}.part" "${os_toolchain_path}" || return 1;
-                md5_result=$(md5 "${STAGING_PATH}/${toolchain_tar}.part" | sed -e 's/^.* = \(.*\)$/\1/');
-                if [ $md5_result == $os_toolchain_md5 ]; then
-                    mv "${STAGING_PATH}/${toolchain_tar}.part" "${STAGING_PATH}/${toolchain_tar}"
-                    echo "md5 valid!";
-                else
-                    echo "md5 failed!";
-                    return 1;
-                fi
-                echo "done";
-            else
-                md5_result=$(md5 "${STAGING_PATH}/${toolchain_tar}" | sed -e 's/^.* = \(.*\)$/\1/');
-                if [ $md5_result == $os_toolchain_md5 ]; then
-                    echo "md5 valid!";
-                else
-                    echo "md5 failed!";
-                    return 1;
-                fi
-            fi
-
-            echo "Extracting ${os_label}-${os_toolchain_arch} toolchain:";
-            if [ $os_extension == ".zip" ]; then
-                unzip_archive $toolchain_tar $os_dest_path gcc-arm;
-                shift_subdir_up gcc-arm
-            else
-                untar_archive $toolchain_tar $os_dest_path gcc-arm;
-                shift_subdir_up gcc-arm
-            fi
-        fi
-
-        if [ $os_xpack_arch != "" ]; then
-            for (( i=0; i<${#XPACK_TOOLS[@]}; i++ )); do
-                os_xpack_tool="${XPACK_TOOLS[$i]}";
-                os_xpack_version="${XPACK_VERSIONS[$i]}";
-                xpack_tool_path="https://github.com/xpack-dev-tools/${os_xpack_tool}-xpack/releases/download/v${os_xpack_version}/xpack-${os_xpack_tool}-${os_xpack_version}-${os_label}-${os_xpack_arch}${os_xpack_ext}";
-                
-                xpack_tar="$(basename "${xpack_tool_path}")";
-                check_downloaded_file "${xpack_tar}";
-
-                if [ $? -eq 1 ]; then
-                    echo "Downloading ${os_label}-${os_xpack_arch} xpack-${os_xpack_tool}:";
-                    dbtb_curl "${STAGING_PATH}/${xpack_tar}.part" ${xpack_tool_path} || return 1;
-                    mv "${STAGING_PATH}/${xpack_tar}.part" "${STAGING_PATH}/${xpack_tar}";
-                    echo "Fetching sha hash:";
-                    dbtb_curl "${STAGING_PATH}/${xpack_tar}.sha" "${xpack_tool_path}.sha" || return 1;
-                    cd "${STAGING_PATH}";
-                    shasum -c "${xpack_tar}.sha" || return 1;
-                    echo "sha valid!";
-                    cd ..
-                else
-                    check_downloaded_file "${xpack_tar}.sha";
-                    if [ $? -eq 1 ]; then
-                        dbtb_curl "${STAGING_PATH}/${xpack_tar}.sha" "${xpack_tool_path}.sha" || return 1;
+            if [[ $os_label == $DARWIN_LABEL ]]; then
+                for (( ai=0; ai<${#DARWIN_TOOLCHAIN_ARCH[@]}; ai++ )); do
+                    if [ $os_arch == ${DARWIN_TOOLCHAIN_ARCH[$ai]} ]; then
+                        os_tc_arch=${DARWIN_TOOLCHAIN_ARCH[$ai]};
+                        os_xpack_arch=${DARWIN_XPACK_ARCH[$ai]};
+                        os_python_arch=${DARWIN_PYTHON_ARCH[$ai]};
                     fi
-                    cd "${STAGING_PATH}";
-                    shasum -c "${xpack_tar}.sha" || return 1;
-                    echo "sha valid!";
-                    cd ..
+                done
+                if [[ $os_tc_arch != "" ]]; then
+                    os_extension=$DARWIN_EXTENSION;
+                    os_xpack_ext=$DARWIN_XPACK_EXT;
+                    os_dest_path="${DARWIN_LABEL}-${os_tc_arch}";
+                    os_python_label=$DARWIN_PYTHON_LABEL;
+                    os_python_ext=$DARWIN_PYTHON_EXT;
                 fi
-
-                echo "Extracting ${os_label}-${os_xpack_arch} ${os_xpack_tool}:";
-                if [ $os_xpack_ext == ".zip" ]; then
-                    unzip_archive $xpack_tar $os_dest_path $os_xpack_tool;
-                    shift_subdir_up $os_xpack_tool
-                else
-                    untar_archive $xpack_tar $os_dest_path $os_xpack_tool;
-                    shift_subdir_up $os_xpack_tool
+            elif [[ $os_label == $LINUX_LABEL ]]; then
+                for (( ai=0; ai<${#LINUX_TOOLCHAIN_ARCH[@]}; ai++)); do
+                    if [[ $os_arch == ${LINUX_TOOLCHAIN_ARCH[$ai]} ]]; then
+                        os_tc_arch=${LINUX_TOOLCHAIN_ARCH[$ai]};
+                        os_xpack_arch=${LINUX_XPACK_ARCH[$ai]};
+                        os_python_arch=${LINUX_PYTHON_ARCH[$ai]};
+                    fi
+                done
+                if [[ $os_tc_arch != "" ]]; then
+                    os_extension=$LINUX_EXTENSION;
+                    os_xpack_ext=$LINUX_XPACK_EXT;
+                    os_dest_path="${LINUX_LABEL}-${os_tc_arch}";
+                    os_python_label=$LINUX_PYTHON_LABEL;
+                    os_python_ext=$LINUX_PYTHON_EXT;
                 fi
-            done
-        fi
-
-        if [ $os_python_arch != "" ]; then
-            os_python_path="https://github.com/indygreg/python-build-standalone/releases/download/${PYTHON_VERSION_TAG}/cpython-${PYTHON_VERSION}+${PYTHON_VERSION_TAG}-${os_python_arch}-${os_python_label}-install_only${os_python_ext}"
-
-            python_tar="$(basename "${os_python_path}")";
-            check_downloaded_file "${python_tar}";
-
-            if [ $? -eq 1 ]; then
-                echo "Downloading ${os_python_label}-${os_python_arch} standalone cpython:";
-                dbtb_curl "${STAGING_PATH}/${python_tar}.part" ${os_python_path} || return 1;
-                echo "Fetching sha256 hash:";
-                dbtb_curl "${STAGING_PATH}/${python_tar}.sha256" "${os_python_path}.sha256" || return 1;
-                sha256_val=$(shasum -a 256 ${STAGING_PATH}/${python_tar}.part | awk '{print $1}')
-                if [ $sha256_val == $(cat ${STAGING_PATH}/${python_tar}.sha256) ]; then
-                    mv "${STAGING_PATH}/${python_tar}.part" "${STAGING_PATH}/${python_tar}";
-                    echo "sha256 valid!";
-                else
-                    echo "sha256 failed!";
-                    return 1;
+            elif [[ $os_label == $WIN32_LABEL ]]; then
+                for (( ai=0; ai<${#WIN32_TOOLCHAIN_ARCH[@]}; ai++)); do
+                    if [[ $os_arch == ${WIN32_TOOLCHAIN_ARCH[$ai]} ]]; then
+                        os_tc_arch=${WIN32_TOOLCHAIN_ARCH[$ai]};
+                        os_xpack_arch=${WIN32_XPACK_ARCH[$ai]};
+                        os_python_arch=${WIN32_PYTHON_ARCH[$ai]};
+                    fi
+                done
+                if [[ $os_tc_arch != "" ]]; then
+                    os_extension=$WIN32_EXTENSION;
+                    os_xpack_ext=$WIN32_XPACK_EXT;
+                    os_dest_path="${WIN32_LABEL}-${os_tc_arch}";
+                    os_python_label=$WIN32_PYTHON_LABEL;
+                    os_python_ext=$WIN32_PYTHON_EXT;
                 fi
             fi
 
-            echo "Extracting ${os_python_label}-${os_python_arch} standalone cpython:";
-            if [ $os_python_ext == ".zip" ]; then
-                unzip_archive $python_tar $os_dest_path python;
-                shift_subdir_up python
-            else
-                untar_archive $python_tar $os_dest_path python;
-                shift_subdir_up python
+            if [[ $os_tc_arch != "" ]]; then
+                rm -rf "${os_dest_path}";
+                mkdir -p "${os_dest_path}";
+
+                echo "${VERSION}" > "${os_dest_path}/VERSION";
             fi
-        fi
+
+            if [[ $os_xpack_arch != "" ]]; then
+                for (( i=0; i<${#XPACK_TOOLS[@]}; i++ )); do
+                    os_xpack_tool=${XPACK_TOOLS[$i]};
+                    os_xpack_version=${XPACK_VERSIONS[$i]};
+                    xpack_tool_path="https://github.com/xpack-dev-tools/${os_xpack_tool}-xpack/releases/download/v${os_xpack_version}/xpack-${os_xpack_tool}-${os_xpack_version}-${os_label}-${os_xpack_arch}${os_xpack_ext}";
+                    
+                    xpack_tar="$(basename "${xpack_tool_path}")";
+                    check_downloaded_file "${xpack_tar}";
+
+                    if [[ $? -eq 1 ]]; then
+                        echo "Downloading ${os_label}-${os_xpack_arch} xpack-${os_xpack_tool}:";
+                        dbtb_curl "${STAGING_PATH}/${xpack_tar}.part" ${xpack_tool_path} || return 1;
+                        mv "${STAGING_PATH}/${xpack_tar}.part" "${STAGING_PATH}/${xpack_tar}";
+                        echo "Fetching sha hash:";
+                        dbtb_curl "${STAGING_PATH}/${xpack_tar}.sha" "${xpack_tool_path}.sha" || return 1;
+                        cd "${STAGING_PATH}";
+                        shasum -c "${xpack_tar}.sha" || return 1;
+                        echo "sha valid!";
+                        cd ..
+                    else
+                        check_downloaded_file "${xpack_tar}.sha";
+                        if [[ $? -eq 1 ]]; then
+                            dbtb_curl "${STAGING_PATH}/${xpack_tar}.sha" "${xpack_tool_path}.sha" || return 1;
+                        fi
+                        cd "${STAGING_PATH}";
+                        shasum -c "${xpack_tar}.sha" || return 1;
+                        echo "sha valid!";
+                        cd ..
+                    fi
+
+                    echo "Extracting ${os_label}-${os_xpack_arch} ${os_xpack_tool}:";
+                    if [ $os_xpack_ext == ".zip" ]; then
+                        unzip_archive $xpack_tar $os_dest_path $os_xpack_tool;
+                        shift_subdir_up $os_xpack_tool
+                    else
+                        untar_archive $xpack_tar $os_dest_path $os_xpack_tool;
+                        shift_subdir_up $os_xpack_tool
+                    fi
+                done
+            fi
+
+            if [[ $os_python_arch != "" ]]; then
+                os_python_path="https://github.com/indygreg/python-build-standalone/releases/download/${PYTHON_VERSION_TAG}/cpython-${PYTHON_VERSION}+${PYTHON_VERSION_TAG}-${os_python_arch}-${os_python_label}-install_only${os_python_ext}"
+
+                python_tar="$(basename "${os_python_path}")";
+                check_downloaded_file "${python_tar}";
+
+                if [[ $? -eq 1 ]]; then
+                    echo "Downloading ${os_python_label}-${os_python_arch} standalone cpython:";
+                    dbtb_curl "${STAGING_PATH}/${python_tar}.part" ${os_python_path} || return 1;
+                    echo "Fetching sha256 hash:";
+                    dbtb_curl "${STAGING_PATH}/${python_tar}.sha256" "${os_python_path}.sha256" || return 1;
+                    sha256_val=$(shasum -a 256 ${STAGING_PATH}/${python_tar}.part | awk '{print $1}')
+                    if [[ $sha256_val == $(cat ${STAGING_PATH}/${python_tar}.sha256) ]]; then
+                        mv "${STAGING_PATH}/${python_tar}.part" "${STAGING_PATH}/${python_tar}";
+                        echo "sha256 valid!";
+                    else
+                        echo "sha256 failed!";
+                        return 1;
+                    fi
+                fi
+
+                echo "Extracting ${os_python_label}-${os_python_arch} standalone cpython:";
+                if [[ $os_python_ext == ".zip" ]]; then
+                    unzip_archive $python_tar $os_dest_path python;
+                    shift_subdir_up python
+                else
+                    untar_archive $python_tar $os_dest_path python;
+                    shift_subdir_up python
+                fi
+            fi
+        done    
     done
 }
 
 add_python_lib () {
-    # We are on darwin, so let's set up the appropriate libraries
-    # on darwin, then move them over to the other paths as
-    # needed.
+    this_os_label=$(uname -s | tr '[:upper:]' '[:lower:]');
+    this_os_arch=$(uname -m | tr '[:upper:]' '[:lower:]');
+    this_path="${this_os_label}-${this_os_arch}";
 
-    py_bin="${DARWIN_PATH}/python/bin/python3";
-    wheel_dir="${DARWIN_PATH}/python/wheel";
+    py_bin="${this_path}/python/bin/python3";
+    wheel_dir="${this_path}/python/wheel";
     mkdir -p "${wheel_dir}";
 
     wheel_files=$($py_bin -m pip wheel -w "${wheel_dir}" $1 | grep -e '\.whl$' | sed -e 's/.*\/\(.*\)$/\1/') || return 1;
-    mkdir -p "${LINUX_PATH}/python/wheel";
-    mkdir -p "${WIN32_PATH}/python/wheel";
-        
-    for wheel in ${wheel_files[@]}; do
-        echo "Including wheel: ${wheel}"
-        cp "${wheel_dir}/${wheel}" "${LINUX_PATH}/python/wheel";
-        cp "${wheel_dir}/${wheel}" "${WIN32_PATH}/python/wheel";
+
+    for os_label in ${OSYSTEMS[@]}; do
+        for os_arch in ${DARWIN_TOOLCHAIN_ARCH[@]}; do
+            target_path="${os_label}-${os_arch}";
+            target_wheel=""
+
+            if [[ $target_path != $this_path ]]; then
+                if [[ $os_label == $DARWIN_LABEL ]]; then
+                    for (( ai=0; ai<${#DARWIN_TOOLCHAIN_ARCH[@]}; ai++ )); do
+                        if [ $os_arch == ${DARWIN_TOOLCHAIN_ARCH[$ai]} ]; then
+                            target_wheel="${target_path}/python/wheel";
+                        fi
+                    done
+                elif [[ $os_label == $LINUX_LABEL ]]; then
+                    for (( ai=0; ai<${#LINUX_TOOLCHAIN_ARCH[@]}; ai++ )); do
+                        if [ $os_arch == ${LINUX_TOOLCHAIN_ARCH[$ai]} ]; then
+                            target_wheel="${target_path}/python/wheel";
+                        fi
+                    done
+                elif [[ $os_label == $WIN32_LABEL ]]; then
+                    for (( ai=0; ai<${#WIN32_TOOLCHAIN_ARCH[@]}; ai++ )); do
+                        if [ $os_arch == ${WIN32_TOOLCHAIN_ARCH[$ai]} ]; then
+                            target_wheel="${target_path}/python/wheel";
+                        fi
+                    done
+                fi
+                if [[ $target_wheel != "" ]]; then
+                    mkdir -p $target_wheel;
+
+                    for wheel in ${wheel_files[@]}; do
+                        cp "${wheel_dir}/${wheel}" "${target_wheel}";
+                    done
+                fi
+            fi
+        done
     done
 }
 
@@ -296,28 +302,29 @@ package_dist () {
     rm -rf "${DIST_PATH}/*"
 
     for dist_label in ${OSYSTEMS[@]}; do
-        tar_cmd="";
-        if [ $dist_label == $DARWIN_LABEL ]; then
-            dist_os_path=$DARWIN_PATH;
-            tar_file="dbt-toolchain-${VERSION}-${DARWIN_PATH}.tar.gz"
-            tar_cmd="tar -zcpf ${DIST_PATH}/${tar_file} ${DARWIN_PATH}";
-        elif [ $dist_label == $LINUX_LABEL ]; then
-            dist_os_path=$LINUX_PATH;
-            tar_file="dbt-toolchain-${VERSION}-${LINUX_PATH}.tar.gz"
-            tar_cmd="tar -zcpf ${DIST_PATH}/${tar_file} ${LINUX_PATH}";
-        elif [ $dist_label == $WIN32_LABEL ]; then
-            dist_os_path=$WIN32_PATH;
-            tar_file="dbt-toolchain-${VERSION}-${WIN32_PATH}.zip"
-            tar_cmd="zip -r -q ${DIST_PATH}/${tar_file} ${WIN32_PATH}";
-        fi
+        for dist_arch in ${OSYSTEMS_ARCH[@]}; do
+            dist_os_path="${dist_label}-${dist_arch}"
+            if [ -d $dist_os_path ]; then
+                tar_file="";
+                tar_cmd="";
 
-        if [ "${tar_cmd}" != "" ]; then
-            $tar_cmd || return 1;
-            cd dist
-            md5 -r "${tar_file}" > "${tar_file}.md5"
-            shasum -a 256 "${tar_file}" > "${tar_file}.sha256"
-            cd ..
-        fi
+                if [[ $dist_label == $DARWIN_LABEL || $dist_label == $LINUX_LABEL ]]; then
+                    tar_file="dbt-toolchain-${VERSION}-${dist_os_path}.tar.gz"
+                    tar_cmd="tar -zcpf ${DIST_PATH}/${tar_file} ${dist_os_path}";
+                elif [ $dist_label == $WIN32_LABEL ]; then
+                    tar_file="dbt-toolchain-${VERSION}-${dist_os_path}.zip"
+                    tar_cmd="zip -r -q ${DIST_PATH}/${tar_file} ${dist_os_path}";
+                fi
+
+                if [[ $tar_cmd != "" && $tar_file != "" ]]; then
+                    $tar_cmd || return 1;
+                    cd dist
+                    md5 -r "${tar_file}" > "${tar_file}.md5"
+                    shasum -a 256 "${tar_file}" > "${tar_file}.sha256"
+                    cd ..
+                fi
+            fi
+        done
     done
     
 }
@@ -335,12 +342,5 @@ add_python_lib SCons
 
 # DIST/PACKAGE
 mkdir -p "${DIST_PATH}"
-
-mkdir -p "${DARWIN_PATH}"
-echo "${VERSION}" > "${DARWIN_PATH}/VERSION"
-mkdir -p "${LINUX_PATH}"
-echo "${VERSION}" > "${LINUX_PATH}/VERSION"
-mkdir -p "${WIN32_PATH}"
-echo "${VERSION}" > "${WIN32_PATH}/VERSION"
 
 package_dist
