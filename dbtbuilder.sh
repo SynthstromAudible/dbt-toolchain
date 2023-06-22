@@ -3,7 +3,7 @@
 # Script to collect all the necessary elements for use in building
 # DelugeFirmware source code and modify them appropriately.
 
-VERSION="7"
+VERSION="8"
 
 DARWIN_LABEL="darwin"
 DARWIN_TOOLCHAIN_ARCH=( "arm64" "x86_64" )
@@ -38,11 +38,13 @@ OSYSTEMS_ARCH=( "arm64" "x86_64" )
 DIST_PATH="dist"
 STAGING_PATH="staging"
 
-XPACK_TOOLS=( "arm-none-eabi-gcc" "openocd" "cmake" )
-XPACK_VERSIONS=( "12.2.1-1.2" "0.12.0-1" "3.23.5-1" )
+XPACK_TOOLS=( "arm-none-eabi-gcc" "openocd" "clang" )
+XPACK_VERSIONS=( "12.2.1-1.2" "0.12.0-1" "14.0.6-2" )
 
 PYTHON_VERSION_TAG="20230507"
 PYTHON_VERSION="3.11.3"
+
+ROOT_DIR="${PWD}"
 
 CURL_TOOL=$(which curl)
 
@@ -89,10 +91,17 @@ untar_archive()
     tar_file=$1;
     dest_dir=$2;
     base_dir=$3;
+    tar_include_list=$4;
+    tar_root_dir=$5;
     rm -rf "${dest_dir}/${base_dir}" || return 1;
     rm -rf "${dest_dir}/${base_dir}.temp" || return 1;
     mkdir -p "${dest_dir}/${base_dir}.temp" || return 1;
-    tar -xvf "${STAGING_PATH}/${tar_file}" -C "${dest_dir}/${base_dir}.temp" 2>&1 | show_unpack_percentage;
+    if [[ -f "${4}" ]]; then
+        tar_includes=$(cat "${tar_include_list}" | awk "{ print \"${tar_root_dir}/\" \$1 }" );
+        tar -xvf "${STAGING_PATH}/${tar_file}" -C "${dest_dir}/${base_dir}.temp" $tar_includes 2>&1 | show_unpack_percentage;
+    else
+        tar -xvf "${STAGING_PATH}/${tar_file}" -C "${dest_dir}/${base_dir}.temp" 2>&1 | show_unpack_percentage;
+    fi
     mv "${dest_dir}/${base_dir}.temp" "${dest_dir}/${base_dir}" || return 1;
     echo "done";
     return 0;
@@ -104,10 +113,17 @@ unzip_archive()
     zip_file=$1;
     dest_dir=$2;
     base_dir=$3;
+    zip_include_list=$4;
+    zip_root_dir=$5;
     rm -rf "${dest_dir}/${base_dir}" || return 1;
     rm -rf "${dest_dir}/${base_dir}.temp" || return 1;
     mkdir -p "${dest_dir}/${base_dir}.temp" || return 1;
-    unzip "${STAGING_PATH}/${zip_file}" -d "${dest_dir}/${base_dir}.temp" 2>&1 | show_unpack_percentage;
+    if [[ -f "${4}" ]]; then
+        zip_includes=$(cat "${zip_include_list}" | awk "{ print \"${zip_root_dir}/\" \$1 }" );
+        unzip "${STAGING_PATH}/${zip_file}" -d "${dest_dir}/${base_dir}.temp" $zip_includes 2>&1 | show_unpack_percentage;
+    else
+        unzip "${STAGING_PATH}/${zip_file}" -d "${dest_dir}/${base_dir}.temp" 2>&1 | show_unpack_percentage;
+    fi
     mv "${dest_dir}/${base_dir}.temp" "${dest_dir}/${base_dir}" || return 1;
     echo "done";
     return 0;
@@ -182,35 +198,37 @@ fetch_tools () {
                     xpack_tool_path="https://github.com/xpack-dev-tools/${os_xpack_tool}-xpack/releases/download/v${os_xpack_version}/xpack-${os_xpack_tool}-${os_xpack_version}-${os_label}-${os_xpack_arch}${os_xpack_ext}";
                     
                     xpack_tar="$(basename "${xpack_tool_path}")";
+                    xpack_tar_root_dir="xpack-${os_xpack_tool}-${os_xpack_version}"
+                    xpack_tar_include_file="${ROOT_DIR}/config/${os_label}-${os_arch}-${os_xpack_tool}.include";
                     check_downloaded_file "${xpack_tar}";
 
                     if [[ $? -eq 1 ]]; then
                         echo "Downloading ${os_label}-${os_xpack_arch} xpack-${os_xpack_tool}:";
-                        dbtb_curl "${STAGING_PATH}/${xpack_tar}.part" ${xpack_tool_path} || return 1;
-                        mv "${STAGING_PATH}/${xpack_tar}.part" "${STAGING_PATH}/${xpack_tar}";
+                        dbtb_curl "${ROOT_DIR}/${STAGING_PATH}/${xpack_tar}.part" ${xpack_tool_path} || return 1;
+                        mv "${ROOT_DIR}/${STAGING_PATH}/${xpack_tar}.part" "${STAGING_PATH}/${xpack_tar}";
                         echo "Fetching sha hash:";
-                        dbtb_curl "${STAGING_PATH}/${xpack_tar}.sha" "${xpack_tool_path}.sha" || return 1;
-                        cd "${STAGING_PATH}";
+                        dbtb_curl "${ROOT_DIR}/${STAGING_PATH}/${xpack_tar}.sha" "${xpack_tool_path}.sha" || return 1;
+                        cd "${ROOT_DIR}/${STAGING_PATH}";
                         shasum -c "${xpack_tar}.sha" || return 1;
                         echo "sha valid!";
-                        cd ..
+                        cd "${ROOT_DIR}"
                     else
                         check_downloaded_file "${xpack_tar}.sha";
                         if [[ $? -eq 1 ]]; then
-                            dbtb_curl "${STAGING_PATH}/${xpack_tar}.sha" "${xpack_tool_path}.sha" || return 1;
+                            dbtb_curl "${ROOT_DIR}/${STAGING_PATH}/${xpack_tar}.sha" "${xpack_tool_path}.sha" || return 1;
                         fi
-                        cd "${STAGING_PATH}";
+                        cd "${ROOT_DIR}/${STAGING_PATH}";
                         shasum -c "${xpack_tar}.sha" || return 1;
                         echo "sha valid!";
-                        cd ..
+                        cd "${ROOT_DIR}";
                     fi
 
                     echo "Extracting ${os_label}-${os_xpack_arch} ${os_xpack_tool}:";
                     if [ $os_xpack_ext == ".zip" ]; then
-                        unzip_archive $xpack_tar $os_dest_path $os_xpack_tool;
+                        unzip_archive $xpack_tar $os_dest_path $os_xpack_tool $xpack_tar_include_file $xpack_tar_root_dir;
                         shift_subdir_up $os_xpack_tool
                     else
-                        untar_archive $xpack_tar $os_dest_path $os_xpack_tool;
+                        untar_archive $xpack_tar $os_dest_path $os_xpack_tool $xpack_tar_include_file $xpack_tar_root_dir;
                         shift_subdir_up $os_xpack_tool
                     fi
                 done
@@ -310,10 +328,10 @@ package_dist () {
 
                 if [[ $dist_label == $DARWIN_LABEL || $dist_label == $LINUX_LABEL ]]; then
                     tar_file="dbt-toolchain-${VERSION}-${dist_os_path}.tar.gz"
-                    tar_cmd="tar -zcpf ${DIST_PATH}/${tar_file} ${dist_os_path}";
+                    tar_cmd="tar --disable-copyfile -zcpf ${DIST_PATH}/${tar_file} ${dist_os_path}";
                 elif [ $dist_label == $WIN32_LABEL ]; then
                     tar_file="dbt-toolchain-${VERSION}-${dist_os_path}.zip"
-                    tar_cmd="zip -r -q ${DIST_PATH}/${tar_file} ${dist_os_path}";
+                    tar_cmd="zip -r -x "*.git*" -x "*.DS_Store" -q ${DIST_PATH}/${tar_file} ${dist_os_path}";
                 fi
 
                 if [[ $tar_cmd != "" && $tar_file != "" ]]; then
