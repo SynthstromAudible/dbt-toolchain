@@ -1,4 +1,5 @@
 bin/clang-format
+bin/clang-tidy
 bin/git-clang-format
 libexec/libffi.so.8
 libexec/libffi.so.8.1.0

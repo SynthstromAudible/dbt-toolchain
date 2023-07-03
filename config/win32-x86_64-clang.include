@@ -1,4 +1,5 @@
 bin/clang-format.exe
+bin/clang-tidy.exe
 bin/git-clang-format
 README.md
 distro-info/licenses/xz-5.2.6/AUTHORS

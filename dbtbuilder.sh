@@ -3,7 +3,7 @@
 # Script to collect all the necessary elements for use in building
 # DelugeFirmware source code and modify them appropriately.
 
-VERSION="8"
+VERSION="9"
 
 DARWIN_LABEL="darwin"
 DARWIN_TOOLCHAIN_ARCH=( "arm64" "x86_64" )
@@ -258,10 +258,21 @@ fetch_tools () {
                 echo "Extracting ${os_python_label}-${os_python_arch} standalone cpython:";
                 if [[ $os_python_ext == ".zip" ]]; then
                     unzip_archive $python_tar $os_dest_path python;
-                    shift_subdir_up python
+                    shift_subdir_up python;
                 else
                     untar_archive $python_tar $os_dest_path python;
-                    shift_subdir_up python
+                    shift_subdir_up python;
+
+                    if [[ $os_python_label != $WIN32_PYTHON_LABEL ]]; then
+                        # Create symlinks to fully takeover the python namespace
+                        # (critical for gdb-py3 to work right)
+                        cd "${os_dest_path}/python/bin";
+                        ln -s python3.11 python;
+                        ln -s python3.11-config python-config;
+                        ln -s pydoc3.11 pydoc;
+                        ln -s idle3.11 idle;
+                        cd "${ROOT_DIR}";
+                    fi
                 fi
             fi
         done    
@@ -357,6 +368,9 @@ add_python_lib certifi
 add_python_lib pyserial
 add_python_lib ansi
 add_python_lib SCons
+add_python_lib "setuptools==68.0.0"
+add_python_lib GitPython
+add_python_lib "kconfiglib==14.1.0"
 
 # DIST/PACKAGE
 mkdir -p "${DIST_PATH}"

@@ -1,4 +1,5 @@
 bin/clang-format
+bin/clang-tidy
 bin/git-clang-format
 libexec/libffi.8.dylib
 libexec/libncurses.6.dylib
