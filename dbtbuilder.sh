@@ -3,7 +3,7 @@
 # Script to collect all the necessary elements for use in building
 # DelugeFirmware source code and modify them appropriately.
 
-VERSION="9"
+VERSION="$(cat VERSION)"
 
 DARWIN_LABEL="darwin"
 DARWIN_TOOLCHAIN_ARCH=( "arm64" "x86_64" )
