@@ -49,6 +49,7 @@ ROOT_DIR="${PWD}"
 HOST_PLATFORM=$(uname -s | tr '[:upper:]' '[:lower:]')
 
 CURL_TOOL=$(which curl)
+
 if [[ ${HOST_PLATFORM} == $LINUX_LABEL ]]; then
     function dbtb_sha256_tool() {
         sha256sum "$1" | awk '{print $1}'
@@ -227,22 +228,19 @@ fetch_tools () {
                         echo "Downloading ${os_label}-${os_xpack_arch} xpack-${os_xpack_tool}:";
                         dbtb_curl "${ROOT_DIR}/${STAGING_PATH}/${xpack_tar}.part" ${xpack_tool_path} || return 1;
                         mv "${ROOT_DIR}/${STAGING_PATH}/${xpack_tar}.part" "${STAGING_PATH}/${xpack_tar}";
-                        echo "Fetching sha hash:";
-                        dbtb_curl "${ROOT_DIR}/${STAGING_PATH}/${xpack_tar}.sha" "${xpack_tool_path}.sha" || return 1;
-                        cd "${ROOT_DIR}/${STAGING_PATH}";
-                        ${CHECK_TOOL_SHA256} "${xpack_tar}.sha" || return 1;
-                        echo "sha valid!";
-                        cd "${ROOT_DIR}"
                     else
                         check_downloaded_file "${xpack_tar}.sha";
-                        if [[ $? -eq 1 ]]; then
-                            dbtb_curl "${ROOT_DIR}/${STAGING_PATH}/${xpack_tar}.sha" "${xpack_tool_path}.sha" || return 1;
-                        fi
-                        cd "${ROOT_DIR}/${STAGING_PATH}";
-                        ${CHECK_TOOL_SHA256} "${xpack_tar}.sha" || return 1;
-                        echo "sha valid!";
-                        cd "${ROOT_DIR}";
                     fi
+
+                    echo 'Checking sha... '
+                    cd "${ROOT_DIR}/${STAGING_PATH}";
+                    if ! (grep "${xpack_tar}" ${ROOT_DIR}/shas.txt | ${CHECK_TOOL_SHA256} -); then
+                        echo 'INVALID'
+                        return 1
+                    else
+                        echo 'VALID!'
+                    fi
+                    cd "${ROOT_DIR}"
 
                     echo "Extracting ${os_label}-${os_xpack_arch} ${os_xpack_tool}:";
                     if [ $os_xpack_ext == ".zip" ]; then

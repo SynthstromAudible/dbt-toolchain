@@ -1,0 +1,15 @@
+940f22eccddb0946b69149d227948f77d5917a2c5f1ab68e5d84d614c2ceed20  xpack-openocd-0.12.0-1-linux-x64.tar.gz
+ca569b6bfd9b3cd87a5bc88b3a33a5c4fe854be3cf95a3dcda1c194e8da9d7bb  xpack-openocd-0.12.0-1-darwin-x64.tar.gz
+5662a2d95bd5b28d24797709864fa8e1379a3bd103112f3c96a6c16db1e2e44a  xpack-arm-none-eabi-gcc-12.2.1-1.2-win32-x64.zip
+65b52009ff1b7f22f5e030cc04e17e5e7d7f2436a62488aca905062a71d3944c  xpack-arm-none-eabi-gcc-12.2.1-1.2-linux-x64.tar.gz
+db4b501a059944551365ee6f6dad95f5a7d0808654939f747c167c5da743fdb7  xpack-openocd-0.12.0-1-darwin-arm64.tar.gz
+dbf5e36b20f236ead98c6c24daaeafb5ed8b9a7be76895f5e0c7b79cb2b90073  xpack-arm-none-eabi-gcc-12.2.1-1.2-linux-arm64.tar.gz
+5cba78c08ad03aa38549e94186cbb4ec34c384565a40a6652715577e4f1a458f  xpack-openocd-0.12.0-1-win32-x64.zip
+0df12ef605a4c8928ad962113aebd25d22a932b2187bfa7b8d111160aa5a05f0  xpack-clang-14.0.6-2-darwin-arm64.tar.gz
+15047b5ee4ab6e739401ffcf1238003f67d83129919d81c0c61989be09d95e62  xpack-arm-none-eabi-gcc-12.2.1-1.2-darwin-arm64.tar.gz
+5b4d2d3c6b258b275eee06a3437b9f04480957e8415c6c9f00b56a7cc5f2c01f  xpack-arm-none-eabi-gcc-12.2.1-1.2-darwin-x64.tar.gz
+293a08d3688912525749f03dd33638ba0dd05f02c7ec0c8f03a556c770ead918  xpack-clang-14.0.6-2-linux-arm64.tar.gz
+446297cbeb8e0a51e0486041e74769443679b264ac3857ba360bc6abd1b8aebe  xpack-clang-14.0.6-2-darwin-x64.tar.gz
+66322b10bbd65d060c0ddf16373e4a77f67fe6c90c952002e3914a8932edc81a  xpack-clang-14.0.6-2-linux-x64.tar.gz
+a86b3ecc256cb870f074a8e633e791ed09102c8ed0d639ae49782c51a404dfbc  xpack-openocd-0.12.0-1-linux-arm64.tar.gz
+5b956e4d2e95d524a6c550ae049a600801e747bde410872668dc8e4a825e7fb3  xpack-clang-14.0.6-2-win32-x64.zip
