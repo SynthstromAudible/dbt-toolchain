@@ -1,0 +1,5 @@
+FROM ubuntu:20.04
+
+ADD prepare.sh prepare.sh
+ENV IN_DOCKER_EMULATION=1
+RUN ./prepare.sh

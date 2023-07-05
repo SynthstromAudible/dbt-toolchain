@@ -1,0 +1,2 @@
+# Ignore dist files copied in to this directory for build simulation purposes
+dist/
