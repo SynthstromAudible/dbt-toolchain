@@ -1,0 +1,20 @@
+on:
+  - push
+permissions:
+  contents: write
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: check out repo
+        uses: actions/checkout@v3
+      - name: Set up builder
+        run: sudo bash ./actions-support/prepare.sh
+      - name: Run build
+        run: bash ./dbtbuilder.sh
+      - name: release
+        uses: softprops/action-gh-release@v1
+        if: startsWith(github.ref, 'refs/tags/')
+        with:
+          files: "dist/*"
+          body_path: "RELEASE.md"
