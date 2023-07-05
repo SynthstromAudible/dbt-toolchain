@@ -74,20 +74,28 @@ dbtb_curl() {
     $CURL_TOOL --progress-bar -SLo "$1" "$2";
 }
 
+dbtb_print() {
+  echo [ ] $@
+}
+
+dbtb_error() {
+  echo [-] $@
+}
+
 check_downloaded_file() {
-    echo "Checking if $1 exists..";
+    dbtb_print "Checking if $1 exists..";
     if [ ! -f "${STAGING_PATH}/$1" ]; then
-        echo "no";
+        dbtb_error "no";
         return 1;
     fi
-    echo "yes";
+    dbtb_print "yes";
     return 0;
 }
 
 shift_subdir_up() {
     parent_dir=$1
     if [ $(ls "${os_dest_path}/${parent_dir}" | wc -l | tr -d " ") -lt 2 ]; then
-        echo "Correcting path depth for ${parent_dir}.";
+        dbtb_print "Correcting path depth for ${parent_dir}.";
         openocd_subdir=$(ls "${os_dest_path}/${parent_dir}" | head -n 1);
         mv "${os_dest_path}/${parent_dir}" "${os_dest_path}/${parent_dir}.wrong";
         mv "${os_dest_path}/${parent_dir}.wrong/${openocd_subdir}" "${os_dest_path}/${parent_dir}";
@@ -109,7 +117,7 @@ show_unpack_percentage()
 
 untar_archive()
 {
-    echo "Unpacking $1 to '$2':";
+    dbtb_print "Unpacking $1 to '$2':";
     tar_file=$1;
     dest_dir=$2;
     base_dir=$3;
@@ -125,13 +133,13 @@ untar_archive()
         tar -xvf "${STAGING_PATH}/${tar_file}" -C "${dest_dir}/${base_dir}.temp" 2>&1 | show_unpack_percentage;
     fi
     mv "${dest_dir}/${base_dir}.temp" "${dest_dir}/${base_dir}" || return 1;
-    echo "done";
+    dbtb_print "done";
     return 0;
 }
 
 unzip_archive()
 {
-    echo "Unzipping $1 to '$2':";
+    dbtb_print "Unzipping $1 to '$2':";
     zip_file=$1;
     dest_dir=$2;
     base_dir=$3;
@@ -147,7 +155,7 @@ unzip_archive()
         unzip "${STAGING_PATH}/${zip_file}" -d "${dest_dir}/${base_dir}.temp" 2>&1 | show_unpack_percentage;
     fi
     mv "${dest_dir}/${base_dir}.temp" "${dest_dir}/${base_dir}" || return 1;
-    echo "done";
+    dbtb_print "done";
     return 0;
 }
 
@@ -225,24 +233,24 @@ fetch_tools () {
                     check_downloaded_file "${xpack_tar}";
 
                     if [[ $? -eq 1 ]]; then
-                        echo "Downloading ${os_label}-${os_xpack_arch} xpack-${os_xpack_tool}:";
+                        dbtb_print "Downloading ${os_label}-${os_xpack_arch} xpack-${os_xpack_tool}:";
                         dbtb_curl "${ROOT_DIR}/${STAGING_PATH}/${xpack_tar}.part" ${xpack_tool_path} || return 1;
                         mv "${ROOT_DIR}/${STAGING_PATH}/${xpack_tar}.part" "${STAGING_PATH}/${xpack_tar}";
                     else
                         check_downloaded_file "${xpack_tar}.sha";
                     fi
 
-                    echo 'Checking sha... '
+                    dbtb_print 'Checking sha... '
                     cd "${ROOT_DIR}/${STAGING_PATH}";
                     if ! (grep "${xpack_tar}" ${ROOT_DIR}/shas.txt | ${CHECK_TOOL_SHA256} -); then
-                        echo 'INVALID'
+                        dbtb_error 'INVALID'
                         return 1
                     else
-                        echo 'VALID!'
+                        dbtb_print 'VALID!'
                     fi
                     cd "${ROOT_DIR}"
 
-                    echo "Extracting ${os_label}-${os_xpack_arch} ${os_xpack_tool}:";
+                    dbtb_print "Extracting ${os_label}-${os_xpack_arch} ${os_xpack_tool}:";
                     if [ $os_xpack_ext == ".zip" ]; then
                         unzip_archive $xpack_tar $os_dest_path $os_xpack_tool $xpack_tar_include_file $xpack_tar_root_dir;
                         shift_subdir_up $os_xpack_tool
@@ -260,9 +268,9 @@ fetch_tools () {
                 check_downloaded_file "${python_tar}";
 
                 if [[ $? -eq 1 ]]; then
-                    echo "Downloading ${os_python_label}-${os_python_arch} standalone cpython:";
+                    dbtb_print "Downloading ${os_python_label}-${os_python_arch} standalone cpython:";
                     dbtb_curl "${STAGING_PATH}/${python_tar}.part" ${os_python_path} || return 1;
-                    echo "Fetching sha256 hash:";
+                    dbtb_print "Fetching sha256 hash:";
                     dbtb_curl "${STAGING_PATH}/${python_tar}.sha256" "${os_python_path}.sha256" || return 1;
                     sha256_val=$(${HASH_TOOL_SHA256} ${STAGING_PATH}/${python_tar}.part | awk '{print $1}')
                     if [[ $sha256_val == $(cat ${STAGING_PATH}/${python_tar}.sha256) ]]; then
@@ -306,6 +314,8 @@ add_python_lib () {
     py_bin="${this_path}/python/bin/python3";
     wheel_dir="${this_path}/python/wheel";
     mkdir -p "${wheel_dir}";
+
+    dbtb_print "Adding python lib: $1"
 
     wheel_files=$($py_bin -m pip wheel -w "${wheel_dir}" $1 | grep -e '\.whl$' | sed -e 's/.*\/\(.*\)$/\1/') || return 1;
 
@@ -353,6 +363,7 @@ package_dist () {
     for dist_label in ${OSYSTEMS[@]}; do
         for dist_arch in ${OSYSTEMS_ARCH[@]}; do
             dist_os_path="${dist_label}-${dist_arch}"
+            dbtb_print "Packaging ${dist_os_path}"
             if [ -d $dist_os_path ]; then
                 tar_file="";
                 tar_cmd="";
@@ -396,3 +407,5 @@ add_python_lib "kconfiglib==14.1.0"
 mkdir -p "${DIST_PATH}"
 
 package_dist
+
+dbtb_print "=^._.^= DONE =^._.^="
