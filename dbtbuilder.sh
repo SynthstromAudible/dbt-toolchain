@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/usr/bin/env bash
 
 # Script to collect all the necessary elements for use in building
 # DelugeFirmware source code and modify them appropriately.
@@ -46,7 +46,28 @@ PYTHON_VERSION="3.11.3"
 
 ROOT_DIR="${PWD}"
 
+HOST_PLATFORM=$(uname -s | tr '[:upper:]' '[:lower:]')
+
 CURL_TOOL=$(which curl)
+if [[ ${HOST_PLATFORM} == $LINUX_LABEL ]]; then
+    function dbtb_sha256_tool() {
+        sha256sum "$1" | awk '{print $1}'
+    }
+
+    function dbtb_md5_tool() {
+        md5sum "$1" | awk '{print $1}'
+    }
+
+    TAR_TOOL="tar"
+    HASH_TOOL_SHA256="dbtb_sha256_tool"
+    HASH_TOOL_MD5="dbtb_md5_tool"
+    CHECK_TOOL_SHA256="sha256sum --check "
+elif [[ $HOST_PLATFORM == $DARWIN_LABEL ]]; then
+    TAR_TOOL="tar --disable-copyfile"
+    HASH_TOOL_SHA256="sha -a 256"
+    HASH_TOOL_MD5="md5 -r"
+    CHECK_TOOL_SHA256="shasum -c"
+fi
 
 dbtb_curl() {
     $CURL_TOOL --progress-bar -SLo "$1" "$2";
@@ -209,7 +230,7 @@ fetch_tools () {
                         echo "Fetching sha hash:";
                         dbtb_curl "${ROOT_DIR}/${STAGING_PATH}/${xpack_tar}.sha" "${xpack_tool_path}.sha" || return 1;
                         cd "${ROOT_DIR}/${STAGING_PATH}";
-                        shasum -c "${xpack_tar}.sha" || return 1;
+                        ${CHECK_TOOL_SHA256} "${xpack_tar}.sha" || return 1;
                         echo "sha valid!";
                         cd "${ROOT_DIR}"
                     else
@@ -218,7 +239,7 @@ fetch_tools () {
                             dbtb_curl "${ROOT_DIR}/${STAGING_PATH}/${xpack_tar}.sha" "${xpack_tool_path}.sha" || return 1;
                         fi
                         cd "${ROOT_DIR}/${STAGING_PATH}";
-                        shasum -c "${xpack_tar}.sha" || return 1;
+                        ${CHECK_TOOL_SHA256} "${xpack_tar}.sha" || return 1;
                         echo "sha valid!";
                         cd "${ROOT_DIR}";
                     fi
@@ -245,7 +266,7 @@ fetch_tools () {
                     dbtb_curl "${STAGING_PATH}/${python_tar}.part" ${os_python_path} || return 1;
                     echo "Fetching sha256 hash:";
                     dbtb_curl "${STAGING_PATH}/${python_tar}.sha256" "${os_python_path}.sha256" || return 1;
-                    sha256_val=$(shasum -a 256 ${STAGING_PATH}/${python_tar}.part | awk '{print $1}')
+                    sha256_val=$(${HASH_TOOL_SHA256} ${STAGING_PATH}/${python_tar}.part | awk '{print $1}')
                     if [[ $sha256_val == $(cat ${STAGING_PATH}/${python_tar}.sha256) ]]; then
                         mv "${STAGING_PATH}/${python_tar}.part" "${STAGING_PATH}/${python_tar}";
                         echo "sha256 valid!";
@@ -329,6 +350,7 @@ add_python_lib () {
 
 package_dist () {
     rm -rf "${DIST_PATH}/*"
+    this_os_label=$(uname -s | tr '[:upper:]' '[:lower:]')
 
     for dist_label in ${OSYSTEMS[@]}; do
         for dist_arch in ${OSYSTEMS_ARCH[@]}; do
@@ -339,7 +361,7 @@ package_dist () {
 
                 if [[ $dist_label == $DARWIN_LABEL || $dist_label == $LINUX_LABEL ]]; then
                     tar_file="dbt-toolchain-${VERSION}-${dist_os_path}.tar.gz"
-                    tar_cmd="tar --disable-copyfile -zcpf ${DIST_PATH}/${tar_file} ${dist_os_path}";
+                    tar_cmd="$TAR_TOOL -zcpf ${DIST_PATH}/${tar_file} ${dist_os_path}"
                 elif [ $dist_label == $WIN32_LABEL ]; then
                     tar_file="dbt-toolchain-${VERSION}-${dist_os_path}.zip"
                     tar_cmd="zip -r -x "*.git*" -x "*.DS_Store" -q ${DIST_PATH}/${tar_file} ${dist_os_path}";
@@ -348,8 +370,8 @@ package_dist () {
                 if [[ $tar_cmd != "" && $tar_file != "" ]]; then
                     $tar_cmd || return 1;
                     cd dist
-                    md5 -r "${tar_file}" > "${tar_file}.md5"
-                    shasum -a 256 "${tar_file}" > "${tar_file}.sha256"
+                    $HASH_TOOL_MD5 "${tar_file}" > "${tar_file}.md5"
+                    $HASH_TOOL_SHA256 "${tar_file}" > "${tar_file}.sha256"
                     cd ..
                 fi
             fi
