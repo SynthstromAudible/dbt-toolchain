@@ -236,17 +236,15 @@ fetch_tools () {
                         dbtb_print "Downloading ${os_label}-${os_xpack_arch} xpack-${os_xpack_tool}:";
                         dbtb_curl "${ROOT_DIR}/${STAGING_PATH}/${xpack_tar}.part" ${xpack_tool_path} || return 1;
                         mv "${ROOT_DIR}/${STAGING_PATH}/${xpack_tar}.part" "${STAGING_PATH}/${xpack_tar}";
-                    else
-                        check_downloaded_file "${xpack_tar}.sha";
                     fi
 
                     dbtb_print 'Checking sha... '
                     cd "${ROOT_DIR}/${STAGING_PATH}";
-                    if ! (grep "${xpack_tar}" ${ROOT_DIR}/shas.txt | ${CHECK_TOOL_SHA256} -); then
+                    if (grep "${xpack_tar}" ${ROOT_DIR}/shas.txt | ${CHECK_TOOL_SHA256} -); then
+                        dbtb_print 'VALID!'
+                    else
                         dbtb_error 'INVALID'
                         return 1
-                    else
-                        dbtb_print 'VALID!'
                     fi
                     cd "${ROOT_DIR}"
 
@@ -270,16 +268,15 @@ fetch_tools () {
                 if [[ $? -eq 1 ]]; then
                     dbtb_print "Downloading ${os_python_label}-${os_python_arch} standalone cpython:";
                     dbtb_curl "${STAGING_PATH}/${python_tar}.part" ${os_python_path} || return 1;
-                    dbtb_print "Fetching sha256 hash:";
-                    dbtb_curl "${STAGING_PATH}/${python_tar}.sha256" "${os_python_path}.sha256" || return 1;
-                    sha256_val=$(${HASH_TOOL_SHA256} ${STAGING_PATH}/${python_tar}.part | awk '{print $1}')
-                    if [[ $sha256_val == $(cat ${STAGING_PATH}/${python_tar}.sha256) ]]; then
-                        mv "${STAGING_PATH}/${python_tar}.part" "${STAGING_PATH}/${python_tar}";
-                        echo "sha256 valid!";
-                    else
-                        echo "sha256 failed!";
-                        return 1;
-                    fi
+                    mv "${STAGING_PATH}/${python_tar}.part" "${STAGING_PATH}/${python_tar}"
+                fi
+
+                dbtb_print "Check Python SHA256"
+                if (cd ${STAGING_PATH}; grep "${python_tar}" ${ROOT_DIR}/shas.txt | ${CHECK_TOOL_SHA256} -); then
+                    dbtb_print "VALID"
+                else
+                    dbtb_error "INVALID!"
+                    return 1
                 fi
 
                 echo "Extracting ${os_python_label}-${os_python_arch} standalone cpython:";
