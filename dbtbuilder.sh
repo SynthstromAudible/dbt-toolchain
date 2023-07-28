@@ -38,8 +38,8 @@ OSYSTEMS_ARCH=( "arm64" "x86_64" )
 DIST_PATH="dist"
 STAGING_PATH="staging"
 
-XPACK_TOOLS=( "arm-none-eabi-gcc" "openocd" "clang" )
-XPACK_VERSIONS=( "12.2.1-1.2" "0.12.0-1" "14.0.6-2" )
+XPACK_TOOLS=( "arm-none-eabi-gcc" "openocd" "clang" "cmake" "ninja-build")
+XPACK_VERSIONS=( "12.2.1-1.2" "0.12.0-1" "14.0.6-2" "3.25.3-1" "1.11.1-2")
 
 PYTHON_VERSION_TAG="20230507"
 PYTHON_VERSION="3.11.3"

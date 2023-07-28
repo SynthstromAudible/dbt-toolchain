@@ -18,3 +18,13 @@ f710b8d60621308149c100d5175fec39274ed0b9c99645484fd93d1716ef4310  cpython-3.11.3
 42998e05f97d1ac10b52b0880ddad649c4ca92510555aa8538c97a2dce3fa76a  cpython-3.11.3+20230507-x86_64-pc-windows-msvc-static-install_only.tar.gz
 09e412506a8d63edbb6901742b54da9aa7faf120b8dbdce56c57b303fc892c86  cpython-3.11.3+20230507-aarch64-apple-darwin-install_only.tar.gz
 da50b87d1ec42b3cb577dfd22a3655e43a53150f4f98a4bfb40757c9d7839ab5  cpython-3.11.3+20230507-x86_64-unknown-linux-gnu-install_only.tar.gz
+cbf57ea055028966107fa377b9e4325e4508308fcc47a238f4d678eb65c094ae  xpack-ninja-build-1.11.1-2-darwin-arm64.tar.gz
+915eeff2cb8d106804435bca654cc81b35c935f8cd00be3b84e60d42aa5e8555  xpack-ninja-build-1.11.1-2-darwin-x64.tar.gz
+44e0263a886a75baf4fb56e348326dfb62ae5325c38a2ba02977982ecb1818a8  xpack-ninja-build-1.11.1-2-linux-arm64.tar.gz
+cfd4c4b815183ef513151b05aa576974fc169164d4a706ca1f1b7c350b66107b  xpack-ninja-build-1.11.1-2-linux-x64.tar.gz
+da68e7157bda76cb79c9b86ae00fd1856a24f971fdeab7138ab06ab6882c9d13  xpack-ninja-build-1.11.1-2-win32-x64.zip
+26c7384f8bde8d63799ec816f1edc5c207cc7b743bb8a913376d3b7d04d34266  xpack-cmake-3.25.3-1-darwin-arm64.tar.gz
+2c6e86beccdd83d7a006d9d87fa987232215caa00f95a76577b65ee43f40ea59  xpack-cmake-3.25.3-1-darwin-x64.tar.gz
+43e4454fe8a8ff2a661fff86037455c4454c407ddf8f2fe52a1b9b841ad7ae2e  xpack-cmake-3.25.3-1-linux-arm64.tar.gz
+739a2f0ad0e6947758c6467a37a65e8110f2493d11df763333d69cf6413802b5  xpack-cmake-3.25.3-1-linux-x64.tar.gz
+bdffbaa79d66ce101018278fea4047d2be7588c93371d47095090dca674cba4f  xpack-cmake-3.25.3-1-win32-x64.zip
