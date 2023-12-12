@@ -66,16 +66,7 @@ ADD --keep-git-dir=true https://github.com/$DELUGE_SRC_ORG/DelugeFirmware.git#$D
 RUN <<SMOKE_BUILD bash
   set -ex
   cd /build
-  # We only actually build on amd64 because running the compiler under
-  # emulation is extremely slow.
-  case "$TARGETARCH" in
-    amd64) ./dbt --spew build OLED=0 RELEASE=1 ;;
-    arm64) ./dbt --only-prepare ;;
-    *)
-      echo "Unsupported TARGETARCH" $TARGETARCH
-      exit 1
-      ;;
-  esac
+  ./dbt build release
 SMOKE_BUILD
 RUN rm -rf /dbt/toolchain/linux-$TARGETARCH/python/wheel/*
 
