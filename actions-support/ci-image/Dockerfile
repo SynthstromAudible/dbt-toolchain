@@ -8,7 +8,6 @@ ARG DBT_VERSION
 RUN apt-get update && apt-get install -y curl parallel
 
 # Use the local toolchain files
-COPY ./dist/dbt-toolchain-$DBT_VERSION-linux-arm64.tar.gz /dbt/toolchain/
 COPY ./dist/dbt-toolchain-$DBT_VERSION-linux-x86_64.tar.gz /dbt/toolchain/
 
 # Unpack the toolchain in the unpack container
@@ -16,7 +15,7 @@ RUN <<LOAD_TOOLCHAIN bash
   set -ex
   mkdir -p /dbt/toolchain
   cd /dbt/toolchain
-  targets="x86_64 arm64"
+  targets="x86_64"
   for target_arch in \$targets; do
     DBT_TOOLCHAIN_TAR=dbt-toolchain-${DBT_VERSION}-linux-\${target_arch}.tar.gz
 
@@ -66,7 +65,16 @@ ADD --keep-git-dir=true https://github.com/$DELUGE_SRC_ORG/DelugeFirmware.git#$D
 RUN <<SMOKE_BUILD bash
   set -ex
   cd /build
-  ./dbt build release
+  # We only actually build on amd64 because running the compiler under
+  # emulation is extremely slow.
+  case "$TARGETARCH" in
+    amd64) ./dbt build ;;
+    arm64) ./dbt configure ;;
+    *)
+      echo "Unsupported TARGETARCH" $TARGETARCH
+      exit 1
+      ;;
+  esac
 SMOKE_BUILD
 RUN rm -rf /dbt/toolchain/linux-$TARGETARCH/python/wheel/*
 
