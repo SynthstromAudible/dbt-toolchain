@@ -17,5 +17,5 @@ docker buildx build \
   -t deluge-ci-image:latest \
   -f ./ci-image/Dockerfile \
   --build-arg DBT_VERSION=$(cat ../VERSION) \
-  --build-arg DELUGE_SRC_BRANCH=feature/dbt-relocation \
+  --build-arg DELUGE_SRC_BRANCH=community \
   ./ci-image
