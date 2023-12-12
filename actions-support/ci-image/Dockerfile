@@ -86,7 +86,10 @@ FROM ubuntu:latest as final
 ARG TARGETARCH
 
 # Make sure we have git, as it's needed at runtime
-RUN apt-get update && apt-get install -y git && rm -rf /var/lib/apt/lists/*
+# libxml2 is required for fmt task
+
+# doxygen required for docs
+RUN apt-get update && apt-get install -y git libxml2 doxygen && rm -rf /var/lib/apt/lists/*
 
 # Insert the DBT itself
 COPY --from=builder /dbt /dbt

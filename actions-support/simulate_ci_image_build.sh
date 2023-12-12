@@ -12,7 +12,8 @@ cp ../dist/dbt-toolchain-*-linux*.tar.gz ./ci-image/dist/
 
 # Run the build
 docker buildx build \
-  --platform linux/amd64,linux/arm64 \
+  --platform linux/amd64 \
+  --load \
   -t deluge-ci-image:latest \
   -f ./ci-image/Dockerfile \
   --build-arg DBT_VERSION=$(cat ../VERSION) \
