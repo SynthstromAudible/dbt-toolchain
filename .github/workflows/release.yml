@@ -51,7 +51,7 @@ jobs:
           labels: ${{ steps.meta.outputs.labels }}
           build-args: |
             DBT_VERSION=${{ steps.dbt_version.outputs.version }}
-            DELUGE_SRC_BRANCH=feature/dbt-e2-toolchain-changes
+            DELUGE_SRC_BRANCH=feature/dbt-relocation
       - name: Push release
         if: startsWith(github.ref, 'refs/tags/')
         uses: softprops/action-gh-release@v1
