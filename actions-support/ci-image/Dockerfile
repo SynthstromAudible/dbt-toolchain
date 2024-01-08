@@ -13,8 +13,8 @@ COPY ./dist/dbt-toolchain-$DBT_VERSION-linux-x86_64.tar.gz /dbt/toolchain/
 # Unpack the toolchain in the unpack container
 RUN <<LOAD_TOOLCHAIN bash
   set -ex
-  mkdir -p /dbt/toolchain
-  cd /dbt/toolchain
+  mkdir -p /dbt/toolchain/v\${DBT_VERSION}
+  cd /dbt/toolchain/v\${DBT_VERSION}
   targets="x86_64"
   for target_arch in \$targets; do
     DBT_TOOLCHAIN_TAR=dbt-toolchain-${DBT_VERSION}-linux-\${target_arch}.tar.gz
@@ -30,13 +30,13 @@ RUN <<LOAD_TOOLCHAIN bash
     tar xf \${DBT_TOOLCHAIN_TAR} 2> >(grep -v "tar: Ignoring unknown extended header keyword")
     rm \${DBT_TOOLCHAIN_TAR}
     # Make Python R+W by the build user
-    find /dbt/toolchain/linux-\$target_arch/python | \
+    find /dbt/toolchain/v\${DBT_VERSION}/linux-\$target_arch/python | \
       parallel chown 1000:1000 {} \; chmod a+rw {}
   done
   # kinda stupid hack: move linux-x86_64 to linux-amd64 so we can do a COPY
   # --from below using the Docker TARGETARCH. We then move it back to the right position
-  mv /dbt/toolchain/linux-x86_64/ /dbt/toolchain/linux-amd64
-  ls /dbt/toolchain
+  mv /dbt/toolchain/v\${DBT_VERSION}/linux-x86_64/ /dbt/toolchain/v\${DBT_VERSION}/linux-amd64
+  ls /dbt/toolchain/v\${DBT_VERSION}
 LOAD_TOOLCHAIN
 
 # Configure user
@@ -55,8 +55,8 @@ RUN apt-get update && apt-get install -y git
 RUN useradd -ms /bin/bash nonroot
 
 # Copy DBT from the unpack container
-COPY --from=toolchain-unpacker /dbt/toolchain/linux-$TARGETARCH/ /dbt/toolchain/linux-$TARGETARCH/
-RUN if [ "$TARGETARCH" = "amd64" ]; then mv /dbt/toolchain/linux-amd64 /dbt/toolchain/linux-x86_64; fi
+COPY --from=toolchain-unpacker /dbt/toolchain/v$DBT_VERSION/linux-$TARGETARCH/ /dbt/toolchain/v$DBT_VERSION/linux-$TARGETARCH/
+RUN if [ "$TARGETARCH" = "amd64" ]; then mv /dbt/toolchain/v$DBT_VERSION/linux-amd64 /dbt/toolchain/v$DBT_VERSION/linux-x86_64; fi
 ENV DBT_TOOLCHAIN_PATH=/dbt
 
 # Smoke run, which both checks that the toolchain is working and installs the
