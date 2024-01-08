@@ -1,5 +1,6 @@
 on:
   - push
+  - create
 
 env:
   REGISTRY: ghcr.io
