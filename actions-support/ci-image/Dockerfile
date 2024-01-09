@@ -46,7 +46,8 @@ RUN useradd -ms /bin/bash nonroot
 FROM ubuntu:latest AS builder
 ARG DBT_VERSION
 ARG DELUGE_SRC_ORG=stellar-aria
-ARG DELUGE_SRC_BRANCH=versioned-toolchain
+# from the versioned-toolchain branch
+ARG DELUGE_SRC_COMMIT=5ca526a2c806b45bcfb6ea7a14d4c3e894dce23a
 ARG TARGETARCH
 
 # Install tools required by DBT
@@ -59,16 +60,23 @@ RUN useradd -ms /bin/bash nonroot
 COPY --from=toolchain-unpacker /dbt/toolchain/v$DBT_VERSION/linux-$TARGETARCH/ /dbt/toolchain/v$DBT_VERSION/linux-$TARGETARCH/
 RUN if [ "$TARGETARCH" = "amd64" ]; then mv /dbt/toolchain/v$DBT_VERSION/linux-amd64 /dbt/toolchain/v$DBT_VERSION/linux-x86_64; fi
 ENV DBT_TOOLCHAIN_PATH=/dbt
+ENV DELUGE_FW_ROOT=/build
 
 # Smoke run, which both checks that the toolchain is working and installs the
 # wheels for us so we don't need to ship those in the final image.
 #
 # We don't use the native git support for `ADD` because it caches in a very
-# stupid way. This reinvents that particular wheel, busting the cache whenever
-# the HEAD commit on the specified branch changes
+# stupid way. This reinvents that particular wheel
 # See https://stackoverflow.com/questions/36996046/how-to-prevent-dockerfile-caching-git-clone
-ADD https://api.github.com/repos/$DELUGE_SRC_ORG/DelugeFirmware/git/refs/heads/$DELUGE_SRC_BRANCH version.json
-RUN git clone -b $DELUGE_SRC_BRANCH https://github.com/$DELUGE_SRC_ORG/DelugeFirmware.git /build/
+RUN --mount=type=cache,target=/tmp/git_cache/ <<GIT_CHECKOUT bash
+  set -ex
+  git clone https://github.com/$DELUGE_SRC_ORG/DelugeFirmware.git /tmp/git_cache/DelugeFirmware || true
+  cd /tmp/git_cache/DelugeFirmware/
+  git fetch
+  mkdir -p /build
+  git checkout ${DELUGE_SRC_COMMIT}
+  cp -r ./* ./.git/ /build/
+GIT_CHECKOUT
 RUN <<SMOKE_BUILD bash
   set -ex
   cd /build
