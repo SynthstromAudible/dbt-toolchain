@@ -8,7 +8,7 @@ ARG DBT_VERSION
 RUN apt-get update && apt-get install -y curl parallel
 
 # Use the local toolchain files
-COPY ./dist/dbt-toolchain-$DBT_VERSION-linux-x86_64.tar.gz /dbt/toolchain/
+COPY ./dist/dbt-toolchain-$DBT_VERSION-linux-x86_64.tar.gz /dbt/toolchain/v${DBT_VERSION}/
 
 # Unpack the toolchain in the unpack container
 RUN <<LOAD_TOOLCHAIN bash
@@ -44,9 +44,10 @@ RUN useradd -ms /bin/bash nonroot
 
 # The build container
 FROM ubuntu:latest AS builder
+ARG DBT_VERSION
+ARG DELUGE_SRC_ORG=stellar-aria
+ARG DELUGE_SRC_BRANCH=versioned-toolchain
 ARG TARGETARCH
-ARG DELUGE_SRC_ORG=SynthstromAudible
-ARG DELUGE_SRC_BRANCH=community
 
 # Install tools required by DBT
 RUN apt-get update && apt-get install -y git
@@ -61,7 +62,13 @@ ENV DBT_TOOLCHAIN_PATH=/dbt
 
 # Smoke run, which both checks that the toolchain is working and installs the
 # wheels for us so we don't need to ship those in the final image.
-ADD --keep-git-dir=true https://github.com/$DELUGE_SRC_ORG/DelugeFirmware.git#$DELUGE_SRC_BRANCH /build
+#
+# We don't use the native git support for `ADD` because it caches in a very
+# stupid way. This reinvents that particular wheel, busting the cache whenever
+# the HEAD commit on the specified branch changes
+# See https://stackoverflow.com/questions/36996046/how-to-prevent-dockerfile-caching-git-clone
+ADD https://api.github.com/repos/$DELUGE_SRC_ORG/DelugeFirmware/git/refs/heads/$DELUGE_SRC_BRANCH version.json
+RUN git clone -b $DELUGE_SRC_BRANCH https://github.com/$DELUGE_SRC_ORG/DelugeFirmware.git /build/
 RUN <<SMOKE_BUILD bash
   set -ex
   cd /build
