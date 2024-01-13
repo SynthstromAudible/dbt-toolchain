@@ -8,13 +8,13 @@ ARG DBT_VERSION
 RUN apt-get update && apt-get install -y curl parallel
 
 # Use the local toolchain files
-COPY ./dist/dbt-toolchain-$DBT_VERSION-linux-x86_64.tar.gz /dbt/toolchain/
+COPY ./dist/dbt-toolchain-$DBT_VERSION-linux-x86_64.tar.gz /dbt/toolchain/v${DBT_VERSION}/
 
 # Unpack the toolchain in the unpack container
 RUN <<LOAD_TOOLCHAIN bash
   set -ex
-  mkdir -p /dbt/toolchain
-  cd /dbt/toolchain
+  mkdir -p /dbt/toolchain/v\${DBT_VERSION}
+  cd /dbt/toolchain/v\${DBT_VERSION}
   targets="x86_64"
   for target_arch in \$targets; do
     DBT_TOOLCHAIN_TAR=dbt-toolchain-${DBT_VERSION}-linux-\${target_arch}.tar.gz
@@ -30,13 +30,13 @@ RUN <<LOAD_TOOLCHAIN bash
     tar xf \${DBT_TOOLCHAIN_TAR} 2> >(grep -v "tar: Ignoring unknown extended header keyword")
     rm \${DBT_TOOLCHAIN_TAR}
     # Make Python R+W by the build user
-    find /dbt/toolchain/linux-\$target_arch/python | \
+    find /dbt/toolchain/v\${DBT_VERSION}/linux-\$target_arch/python | \
       parallel chown 1000:1000 {} \; chmod a+rw {}
   done
   # kinda stupid hack: move linux-x86_64 to linux-amd64 so we can do a COPY
   # --from below using the Docker TARGETARCH. We then move it back to the right position
-  mv /dbt/toolchain/linux-x86_64/ /dbt/toolchain/linux-amd64
-  ls /dbt/toolchain
+  mv /dbt/toolchain/v\${DBT_VERSION}/linux-x86_64/ /dbt/toolchain/v\${DBT_VERSION}/linux-amd64
+  ls /dbt/toolchain/v\${DBT_VERSION}
 LOAD_TOOLCHAIN
 
 # Configure user
@@ -44,9 +44,11 @@ RUN useradd -ms /bin/bash nonroot
 
 # The build container
 FROM ubuntu:latest AS builder
+ARG DBT_VERSION
+ARG DELUGE_SRC_ORG=stellar-aria
+# from the versioned-toolchain branch
+ARG DELUGE_SRC_COMMIT=5ca526a2c806b45bcfb6ea7a14d4c3e894dce23a
 ARG TARGETARCH
-ARG DELUGE_SRC_ORG=SynthstromAudible
-ARG DELUGE_SRC_BRANCH=community
 
 # Install tools required by DBT
 RUN apt-get update && apt-get install -y git
@@ -55,13 +57,26 @@ RUN apt-get update && apt-get install -y git
 RUN useradd -ms /bin/bash nonroot
 
 # Copy DBT from the unpack container
-COPY --from=toolchain-unpacker /dbt/toolchain/linux-$TARGETARCH/ /dbt/toolchain/linux-$TARGETARCH/
-RUN if [ "$TARGETARCH" = "amd64" ]; then mv /dbt/toolchain/linux-amd64 /dbt/toolchain/linux-x86_64; fi
+COPY --from=toolchain-unpacker /dbt/toolchain/v$DBT_VERSION/linux-$TARGETARCH/ /dbt/toolchain/v$DBT_VERSION/linux-$TARGETARCH/
+RUN if [ "$TARGETARCH" = "amd64" ]; then mv /dbt/toolchain/v$DBT_VERSION/linux-amd64 /dbt/toolchain/v$DBT_VERSION/linux-x86_64; fi
 ENV DBT_TOOLCHAIN_PATH=/dbt
+ENV DELUGE_FW_ROOT=/build
 
 # Smoke run, which both checks that the toolchain is working and installs the
 # wheels for us so we don't need to ship those in the final image.
-ADD --keep-git-dir=true https://github.com/$DELUGE_SRC_ORG/DelugeFirmware.git#$DELUGE_SRC_BRANCH /build
+#
+# We don't use the native git support for `ADD` because it caches in a very
+# stupid way. This reinvents that particular wheel
+# See https://stackoverflow.com/questions/36996046/how-to-prevent-dockerfile-caching-git-clone
+RUN --mount=type=cache,target=/tmp/git_cache/ <<GIT_CHECKOUT bash
+  set -ex
+  git clone https://github.com/$DELUGE_SRC_ORG/DelugeFirmware.git /tmp/git_cache/DelugeFirmware || true
+  cd /tmp/git_cache/DelugeFirmware/
+  git fetch
+  mkdir -p /build
+  git checkout ${DELUGE_SRC_COMMIT}
+  cp -r ./* ./.git/ /build/
+GIT_CHECKOUT
 RUN <<SMOKE_BUILD bash
   set -ex
   cd /build
