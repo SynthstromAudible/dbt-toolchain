@@ -41,8 +41,8 @@ STAGING_PATH="staging"
 XPACK_TOOLS=( "arm-none-eabi-gcc" "openocd" "clang" "cmake" "ninja-build")
 XPACK_VERSIONS=( "13.2.1-1.1" "0.12.0-1" "17.0.6-1" "3.26.5-1" "1.11.1-3")
 
-PYTHON_VERSION_TAG="20230507"
-PYTHON_VERSION="3.11.3"
+PYTHON_VERSION_TAG="20240107"
+PYTHON_VERSION="3.12.1"
 
 ROOT_DIR="${PWD}"
 
@@ -394,7 +394,7 @@ fetch_tools
 
 add_python_lib certifi
 add_python_lib ansi
-add_python_lib "setuptools==68.0.0"
+add_python_lib "setuptools==69.0.3"
 
 # DIST/PACKAGE
 mkdir -p "${DIST_PATH}"
