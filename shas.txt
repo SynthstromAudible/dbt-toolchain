@@ -3,11 +3,6 @@ ca569b6bfd9b3cd87a5bc88b3a33a5c4fe854be3cf95a3dcda1c194e8da9d7bb  xpack-openocd-
 db4b501a059944551365ee6f6dad95f5a7d0808654939f747c167c5da743fdb7  xpack-openocd-0.12.0-1-darwin-arm64.tar.gz
 5cba78c08ad03aa38549e94186cbb4ec34c384565a40a6652715577e4f1a458f  xpack-openocd-0.12.0-1-win32-x64.zip
 a86b3ecc256cb870f074a8e633e791ed09102c8ed0d639ae49782c51a404dfbc  xpack-openocd-0.12.0-1-linux-arm64.tar.gz
-8190accbbbbcf7620f1ff6d668e4dd090c639665d11188ce864b62554d40e5ab  cpython-3.11.3+20230507-aarch64-unknown-linux-gnu-install_only.tar.gz
-f710b8d60621308149c100d5175fec39274ed0b9c99645484fd93d1716ef4310  cpython-3.11.3+20230507-x86_64-apple-darwin-install_only.tar.gz
-42998e05f97d1ac10b52b0880ddad649c4ca92510555aa8538c97a2dce3fa76a  cpython-3.11.3+20230507-x86_64-pc-windows-msvc-static-install_only.tar.gz
-09e412506a8d63edbb6901742b54da9aa7faf120b8dbdce56c57b303fc892c86  cpython-3.11.3+20230507-aarch64-apple-darwin-install_only.tar.gz
-da50b87d1ec42b3cb577dfd22a3655e43a53150f4f98a4bfb40757c9d7839ab5  cpython-3.11.3+20230507-x86_64-unknown-linux-gnu-install_only.tar.gz
 04d789cfb29791781ecfb53d715647de9406d8913685886f1de61696d92553f0  xpack-cmake-3.26.5-1-darwin-arm64.tar.gz
 c693d47750869571b4a6ef98fd68bae7226581c65d8746ceeaea6fa8ccbd42ae  xpack-cmake-3.26.5-1-darwin-x64.tar.gz
 2319b2b45963ec50b365d41379de846ec2a4fb77d2d40a74791c8261cc8b7f5c  xpack-cmake-3.26.5-1-linux-arm.tar.gz
@@ -32,3 +27,8 @@ ab7f75d95ead0b1efb7432e7f034f9575cc3d23dc1b03d41af1ec253486d19de  xpack-arm-none
 a13fd20ea7c864e92cc29de49949b7ecb9524820d637edf65c17bbeb78c5b3c3  xpack-clang-17.0.6-1-linux-arm64.tar.gz
 1b8562fa79777bb17070cfb37ad8a41a04b36a7c46e65617af510a753a333b9f  xpack-clang-17.0.6-1-linux-x64.tar.gz
 c760b97fe38e4ab09ef5daeaecb97805d1de1380f96a7751d93130e5b5f591fb  xpack-clang-17.0.6-1-win32-x64.zip
+f93f8375ca6ac0a35d58ff007043cbd3a88d9609113f1cb59cf7c8d215f064af  cpython-3.12.1+20240107-aarch64-apple-darwin-install_only.tar.gz
+236533ef20e665007a111c2f36efb59c87ae195ad7dca223b6dc03fb07064f0b  cpython-3.12.1+20240107-aarch64-unknown-linux-gnu-install_only.tar.gz
+eca96158c1568dedd9a0b3425375637a83764d1fa74446438293089a8bfac1f8  cpython-3.12.1+20240107-x86_64-apple-darwin-install_only.tar.gz
+7dde51352511697579d86c968881f431acff9e8b1eb3f42c54de27341fa5b7b2  cpython-3.12.1+20240107-x86_64-pc-windows-msvc-static-install_only.tar.gz
+74e330b8212ca22fd4d9a2003b9eec14892155566738febc8e5e572f267b9472  cpython-3.12.1+20240107-x86_64-unknown-linux-gnu-install_only.tar.gz
