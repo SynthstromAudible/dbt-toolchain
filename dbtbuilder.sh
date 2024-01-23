@@ -43,6 +43,8 @@ XPACK_VERSIONS=( "13.2.1-1.1" "0.12.0-1" "17.0.6-1" "3.26.5-1" "1.11.1-3")
 
 PYTHON_VERSION_TAG="20240107"
 PYTHON_VERSION="3.12.1"
+# Note: When upgrading Python major/minor version, you must edit the `ln -s` 
+# lines below in the python download section
 
 ROOT_DIR="${PWD}"
 
@@ -291,10 +293,10 @@ fetch_tools () {
                         # Create symlinks to fully takeover the python namespace
                         # (critical for gdb-py3 to work right)
                         cd "${os_dest_path}/python/bin";
-                        ln -s python3.11 python;
-                        ln -s python3.11-config python-config;
-                        ln -s pydoc3.11 pydoc;
-                        ln -s idle3.11 idle;
+                        ln -s python3.12 python;
+                        ln -s python3.12-config python-config;
+                        ln -s pydoc3.12 pydoc;
+                        ln -s idle3.12 idle;
                         cd "${ROOT_DIR}";
                     fi
                 fi
