@@ -47,7 +47,7 @@ FROM ubuntu:latest AS builder
 ARG DBT_VERSION
 ARG DELUGE_SRC_ORG=stellar-aria
 # from the versioned-toolchain branch
-ARG DELUGE_SRC_COMMIT=b0e3d5b114509ce090ba51ae014a850e042b0704
+ARG DELUGE_SRC_COMMIT=b83d962d40269c65ea1494cc87767a7f4e0157d9
 ARG TARGETARCH
 
 # Install tools required by DBT
