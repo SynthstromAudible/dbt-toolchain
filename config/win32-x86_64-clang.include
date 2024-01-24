@@ -4,7 +4,7 @@ bin/git-clang-format
 bin/libunwind.dll
 bin/libc++.dll
 README.md
-distro-info
+distro-info/*
 share/clang/clang-format.py
 share/clang/clang-rename.el
 share/clang/clang-format-diff.py
