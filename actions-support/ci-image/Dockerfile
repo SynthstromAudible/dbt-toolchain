@@ -45,9 +45,9 @@ RUN useradd -ms /bin/bash nonroot
 # The build container
 FROM ubuntu:latest AS builder
 ARG DBT_VERSION
-ARG DELUGE_SRC_ORG=stellar-aria
+ARG DELUGE_SRC_ORG=synthstromaudible
 # from the versioned-toolchain branch
-ARG DELUGE_SRC_COMMIT=b83d962d40269c65ea1494cc87767a7f4e0157d9
+ARG DELUGE_SRC_COMMIT=20474b787dee6f46601583f46c1ea4579fdc2818
 ARG TARGETARCH
 
 # Install tools required by DBT
