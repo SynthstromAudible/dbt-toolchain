@@ -130,9 +130,9 @@ untar_archive()
     mkdir -p "${dest_dir}/${base_dir}.temp" || return 1;
     if [[ -f "${4}" ]]; then
         tar_includes=$(cat "${tar_include_list}" | awk "{ print \"${tar_root_dir}/\" \$1 }" );
-        tar -xvf "${STAGING_PATH}/${tar_file}" -C "${dest_dir}/${base_dir}.temp" $tar_includes 2>&1 | show_unpack_percentage;
+        tar -xvf "${STAGING_PATH}/${tar_file}" --directory "${dest_dir}/${base_dir}.temp" $tar_includes 2>&1 | show_unpack_percentage;
     else
-        tar -xvf "${STAGING_PATH}/${tar_file}" -C "${dest_dir}/${base_dir}.temp" 2>&1 | show_unpack_percentage;
+        tar -xvf "${STAGING_PATH}/${tar_file}" --directory "${dest_dir}/${base_dir}.temp" 2>&1 | show_unpack_percentage;
     fi
     mv "${dest_dir}/${base_dir}.temp" "${dest_dir}/${base_dir}" || return 1;
     dbtb_print "done";
