@@ -52,7 +52,7 @@ ARG TARGETARCH
 
 # Install tools required by DBT
 ENV DEBIAN_FRONTEND=noninteractive
-RUN apt-get update && apt-get install --yes --no-install-recommends git curl
+RUN apt-get update && apt-get install --yes --no-install-recommends git curl ca-certificates
 
 # Configure user
 RUN useradd -ms /bin/bash nonroot
@@ -103,7 +103,7 @@ ARG TARGETARCH
 # Make sure we have git, as it's needed at runtime
 # libxml2 is required for fmt task
 # doxygen required for docs
-RUN apt-get update && apt-get install --yes --no-install-recommends git libxml2 doxygen curl && rm -rf /var/lib/apt/lists/*
+RUN apt-get update && apt-get install --yes --no-install-recommends git ca-certificates libxml2 doxygen curl && rm -rf /var/lib/apt/lists/*
 
 # Insert the DBT itself
 COPY --from=builder /dbt /dbt
