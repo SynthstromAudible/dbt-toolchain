@@ -4,7 +4,6 @@ bin/git-clang-format
 libexec/libffi.8.dylib
 libexec/libncurses.6.dylib
 libexec/libedit.0.dylib
-libexec/libgcc_s.1.dylib
 README.md
 lib/libclang-cpp.dylib
 lib/libLLVM.dylib

@@ -30,8 +30,8 @@ RUN <<LOAD_TOOLCHAIN bash
     tar xf \${DBT_TOOLCHAIN_TAR} 2> >(grep -v "tar: Ignoring unknown extended header keyword")
     rm \${DBT_TOOLCHAIN_TAR}
     # Make Python R+W by the build user
-    find /dbt/toolchain/v\${DBT_VERSION}/linux-\$target_arch/python | \
-      parallel chown 1000:1000 {} \; chmod a+rw {}
+    find /dbt/toolchain/v\${DBT_VERSION}/linux-\$target_arch/python \
+      -exec chown 1000:1000 {} \+ -exec chmod a+rw {} \+
   done
   # kinda stupid hack: move linux-x86_64 to linux-amd64 so we can do a COPY
   # --from below using the Docker TARGETARCH. We then move it back to the right position
@@ -101,9 +101,9 @@ ARG TARGETARCH
 
 # Make sure we have git, as it's needed at runtime
 # libxml2 is required for fmt task
-
 # doxygen required for docs
-RUN apt-get update && apt-get install -y git libxml2 doxygen && rm -rf /var/lib/apt/lists/*
+ENV DEBIAN_FRONTEND=noninteractive
+RUN apt-get update && apt-get install --yes --no-install-recommends git libxml2 doxygen && rm -rf /var/lib/apt/lists/*
 
 # Insert the DBT itself
 COPY --from=builder /dbt /dbt

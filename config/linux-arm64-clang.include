@@ -10,7 +10,7 @@ libexec/libedit.so.0.0.72
 libexec/libgcc_s.so.1
 README.md
 lib/libclang-cpp.so
-lib/libclang-cpp.so.14
+lib/libclang-cpp.so.17
 lib/libLLVM-17.0.6.so
 lib/libLLVM-17.so
 lib/libLLVM.so
