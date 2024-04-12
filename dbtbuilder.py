@@ -1,7 +1,6 @@
 #!/usr/bin/env python3
 
 import hashlib
-from logging import root
 from pathlib import Path
 import shutil
 import subprocess
@@ -10,7 +9,6 @@ import tarfile
 import zipfile
 from typing import Dict, Optional, List
 import os
-from pprint import pp
 
 from tqdm.auto import tqdm
 import tomllib
@@ -343,8 +341,8 @@ def package_dist():
                 sha256_hash = hashlib.sha256()
 
                 with open(DIST_PATH / dist_file, "rb", buffering=0) as f:
-                    md5_hash = hashlib.file_digest(f, "md5").hexdigest()
-                    sha256_hash = hashlib.file_digest(f, "sha256").hexdigest()
+                    md5_hash = hashlib.file_digest(f, "md5").hexdigest() # type: ignore
+                    sha256_hash = hashlib.file_digest(f, "sha256").hexdigest() # type: ignore
 
                 # Generate MD5
                 with open(DIST_PATH / f"{dist_file}.md5", "w") as md5_file:
@@ -374,7 +372,5 @@ add_python_lib("setuptools==69.0.3")
 # DIST/PACKAGE
 DIST_PATH.mkdir(exist_ok=True)
 
-# # package_dist()
-
-
-# print("=^._.^= DONE =^._.^=")
+# package_dist()
+print("=^._.^= DONE =^._.^=")
