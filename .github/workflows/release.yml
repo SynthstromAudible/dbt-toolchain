@@ -15,6 +15,9 @@ jobs:
     steps:
       - name: check out repo
         uses: actions/checkout@v3
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
       - name: Install required packages
         run: sudo bash ./actions-support/dist-build/prepare.sh
       - name: Set up QEMU
