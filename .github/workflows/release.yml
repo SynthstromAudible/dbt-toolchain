@@ -46,7 +46,7 @@ jobs:
         run: |
           mkdir -p actions-support/ci-image/dist
           cp dist/dbt-toolchain-*-linux*.tar.gz actions-support/ci-image/dist
-          echo "version=$(cat VERSION)" >> "$GITHUB_OUTPUT"
+          echo "version=$(python3 version.py)" >> "$GITHUB_OUTPUT"
       - name: Build and push Docker images to GHCR
         uses: docker/build-push-action@v4
         with:

@@ -16,6 +16,6 @@ docker buildx build \
   --load \
   -t deluge-ci-image:latest \
   -f ./ci-image/Dockerfile \
-  --build-arg DBT_VERSION=$(cat ../VERSION) \
+  --build-arg DBT_VERSION=$(python3 ../version.py) \
   --build-arg DELUGE_SRC_BRANCH=community \
   ./ci-image
