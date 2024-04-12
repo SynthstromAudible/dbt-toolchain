@@ -9,3 +9,4 @@ fi
 # perl provides OSX compatible "shasum"
 # zip is required for Windows packaging
 apt-get install -y curl perl zip
+pip3 install tqdm rich

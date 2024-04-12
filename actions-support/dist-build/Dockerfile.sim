@@ -1,4 +1,4 @@
-FROM ubuntu:20.04
+FROM ubuntu:latest
 
 ADD prepare.sh prepare.sh
 ENV IN_DOCKER_EMULATION=1
