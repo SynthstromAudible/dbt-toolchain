@@ -21,7 +21,7 @@ jobs:
       - name: Install required packages
         run: sudo bash ./actions-support/dist-build/prepare.sh
       - name: Install python packages
-        run: pip3 install --ignore-installed tqdm rich
+        run: pip3 install --ignore-installed tqdm rich requests
       - name: Set up QEMU
         uses: docker/setup-qemu-action@v2
       - name: Set up Docker Buildx

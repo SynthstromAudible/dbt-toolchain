@@ -3,4 +3,4 @@ FROM ubuntu:latest
 ADD prepare.sh prepare.sh
 ENV IN_DOCKER_EMULATION=1
 RUN ./prepare.sh
-RUN pip3 install tqdm rich
+RUN pip3 install tqdm rich requests
