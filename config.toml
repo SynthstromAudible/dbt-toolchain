@@ -1,0 +1,36 @@
+version = 14
+
+[platforms]
+[platforms.linux]
+arch = ["arm64", "x86_64"]
+
+[platforms.darwin]
+arch = ["arm64", "x86_64"]
+
+[platforms.win32]
+arch = ["x86_64"]
+
+[sources]
+[sources.xpack]
+url = "https://github.com/xpack-dev-tools/{name}-xpack/releases/download/v{version}/xpack-{name}-{version}-{platform}-{arch}.{ext}"
+sha256 = "{url}.sha"
+ext.default = "tar.gz"
+ext.win32 = "zip"
+arch.x86_64 = "x64"
+
+[sources.python]
+url = "https://github.com/indygreg/python-build-standalone/releases/download/{date}/cpython-{version}+{date}-{arch}-{platform}-install_only.{ext}"
+sha256 = "{url}.sha256"
+ext.default = "tar.gz"
+arch.arm64 = "aarch64"
+platform.darwin = "apple-darwin"
+platform.linux = "unknown-linux-gnu"
+platform.win32 = "pc-windows-msvc-static"
+
+[packages]
+xpack.openocd = "0.12.0-1"
+xpack.cmake = "3.27.9-1"
+xpack.ninja-build = "1.11.1-3"
+xpack.arm-none-eabi-gcc = "13.2.1-1.1"
+xpack.clang = "17.0.6-1"
+python.python = { version = "3.12.2", date = 20240224 }

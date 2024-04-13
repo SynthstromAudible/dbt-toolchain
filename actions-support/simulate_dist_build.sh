@@ -17,5 +17,5 @@ docker run --rm -it \
   --user=$(id --user):$(id --group) \
   -v "$(pwd):$(pwd)" \
   --workdir "$(pwd)" \
-  --entrypoint "$(pwd)/dbtbuilder.sh" \
+  --entrypoint "$(pwd)/dbtbuilder.py" \
   dbt-builder:latest
