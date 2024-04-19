@@ -20,6 +20,7 @@ from typing import Dict, List
 from rich import print as rich_print
 from tqdm.rich import tqdm
 from tqdm import TqdmExperimentalWarning
+
 warnings.filterwarnings("ignore", category=TqdmExperimentalWarning)
 
 
@@ -181,7 +182,13 @@ def download_file(url: str, filename: Path):
         file_size = int(r.headers.get("Content-Length", 0))
         block_size = 1024
 
-        with tqdm(total=file_size, unit="B", unit_scale=True, miniters=0.01, desc=filename.name) as pbar:
+        with tqdm(
+            total=file_size,
+            unit="B",
+            unit_scale=True,
+            miniters=0.01,
+            desc=filename.name,
+        ) as pbar:
             with filename.open("wb") as file:
                 for data in r.iter_content(block_size):
                     file.write(data)
@@ -195,7 +202,9 @@ def download_file(url: str, filename: Path):
 def create_tar_gz_with_progress(src_dir: Path, dest_file: Path):
     with tarfile.open(dest_file, "w:gz", compresslevel=6) as tar:
         files = list(src_dir.rglob("*"))
-        with tqdm(total=len(files), desc=f"Compressing {dest_file.name}", unit="files") as pbar:
+        with tqdm(
+            total=len(files), desc=f"Compressing {dest_file.name}", unit="files"
+        ) as pbar:
             for file in files:
                 tar.add(file, arcname=file.relative_to(src_dir.parent), recursive=False)
                 pbar.update(1)
@@ -205,7 +214,9 @@ def create_tar_gz_with_progress(src_dir: Path, dest_file: Path):
 def create_zip_with_progress(src_dir: Path, dest_file: Path):
     with zipfile.ZipFile(dest_file, "w", zipfile.ZIP_DEFLATED) as zipf:
         files = list(src_dir.rglob("*"))
-        with tqdm(total=len(files), desc=f"Compressing {dest_file.name}", unit="files") as pbar:
+        with tqdm(
+            total=len(files), desc=f"Compressing {dest_file.name}", unit="files"
+        ) as pbar:
             for file in files:
                 zipf.write(file, arcname=file.relative_to(src_dir.parent))
                 pbar.update(1)
@@ -281,7 +292,7 @@ def unzip_archive(
 
             total_files = len(zip_includes) if zip_includes else len(zip_ref.infolist())
 
-            with tqdm(total=total_files,  desc=zip_file.name, unit="files") as pbar:
+            with tqdm(total=total_files, desc=zip_file.name, unit="files") as pbar:
                 for file_info in zip_ref.infolist():
                     if not zip_includes or file_info.filename in zip_includes:
                         zip_ref.extract(file_info, dest_dir)
@@ -316,18 +327,19 @@ def add_python_lib(lib_name: str):
     os.makedirs(wheel_dir, exist_ok=True)
 
     try:
-        wheel_files = subprocess.check_output(
-            [
-                py_bin,
-                "-m",
-                "pip",
-                "--disable-pip-version-check",
-                "wheel",
-                "--quiet", "--wheel-dir",
-                wheel_dir,
-                lib_name,
-            ]
-        )
+        cmd : List[str] = [
+            str(py_bin),
+            "-m",
+            "pip",
+            "--disable-pip-version-check",
+            "wheel",
+            "--wheel-dir",
+            str(wheel_dir),
+            lib_name,
+        ]
+        print(f"Installing python lib '{lib_name}'")
+        wheel_files = subprocess.check_output(cmd, stderr=subprocess.STDOUT)
+        print(wheel_files.decode())
         wheel_files = [
             Path(line.strip().decode().split()[-1])
             for line in wheel_files.splitlines()
@@ -405,7 +417,7 @@ add_python_lib("setuptools==69.2.0")
 
 # DIST/PACKAGE
 if DIST_PATH.exists():
-  shutil.rmtree(DIST_PATH)
+    shutil.rmtree(DIST_PATH)
 DIST_PATH.mkdir()
 
 rich_print(rf"[bold dim]\[3/3][/bold dim] Compressing toolpacks...")
