@@ -35,8 +35,12 @@ ext.win32 = "zip"
 platform.win32 = "windows"
 
 [packages]
+# CMake
+cmake.default = { version = "3.27.9-1", source = "xpack"}
+cmake.win32 = { version = "3.31.1", source = "kitware-cmake"}
+
+# Others
 openocd = { version = "0.12.0-4", source = "xpack" }
-cmake = { version = "3.27.9-1", source = { win32 = "kitware-cmake", linux = "xpack", darwin = "xpack" } }
 ninja-build = { version = "1.11.1-3", source = "xpack" }
 arm-none-eabi-gcc = { version = "14.2.1-1.1", source = "xpack" }
 clang = { version = "18.1.8-2", source = "xpack" }

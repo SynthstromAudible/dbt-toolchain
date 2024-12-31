@@ -56,26 +56,28 @@ class Package:
     def __init__(
         self,
         name: str,
+        platform: str,
         details: Dict[str, str],
     ):
         """"""
         self.name = name
+        self.platform = platform
         self.details = details
 
     def __repr__(self):
-        return f"Package(name='{self.name}', details='{self.details}')"
+        return f"Package(name='{self.name}', platform='{self.platform}', details='{self.details}')"
 
-    def get_source(self, platform: str, arch: str) -> Source:
+    def get_source(self) -> Source:
         source_key = self.details["source"]
         if type(source_key) == dict:
-            return sources[source_key[platform]]
+            return sources[source_key[self.platform]]
         else:
             return sources[source_key]
 
-    def format_url(self, platform: str, arch: str) -> str:
-        source = self.get_source(platform, arch)
-        ext = source.ext_map.get(platform) or source.ext_map["default"]
-        platform = source.platform_map.get(platform) or platform
+    def format_url(self, arch: str) -> str:
+        source = self.get_source()
+        ext = source.ext_map.get(self.platform) or source.ext_map["default"]
+        platform = source.platform_map.get(self.platform) or self.platform
         return source.url.format(
             platform=platform,
             arch=source.arch_map.get(arch) or arch,
@@ -93,9 +95,8 @@ def matches_sha256(filepath: Path, hash_url: str):
 
 
 def download_package(package: Package, platform: str, arch: str) -> None:
-    print(package)
-    url = package.format_url(platform, arch)
-    hash_url = package.get_source(platform, arch).sha256.format(url=url)
+    url = package.format_url(arch)
+    hash_url = package.get_source().sha256.format(url=url)
     filename = os.path.basename(url)
     filepath = CACHE_PATH / filename
 
@@ -120,12 +121,12 @@ def download_package(package: Package, platform: str, arch: str) -> None:
 def extract_package(
     package: Package, platform: str, arch: str, force_reextract: bool = False
 ):
-    url = package.format_url(platform, arch)
+    url = package.format_url(arch)
     filepath = CACHE_PATH / os.path.basename(url)
     dest_path = STAGING_PATH / f"{platform}-{arch}"
     ext = (
-        package.get_source(platform, arch).ext_map.get(platform)
-        or package.get_source(platform, arch).ext_map["default"]
+        package.get_source().ext_map.get(platform)
+        or package.get_source().ext_map["default"]
     )
     include_file = ROOT_DIR / f"config/{platform}-{arch}-{package.name}.include"
 
@@ -167,7 +168,20 @@ for name, details in config["sources"].items():
     )
 
 for name, details in config["packages"].items():
-    packages += [Package(name, details)]
+    if "source" in details.keys():
+        packages += [
+            Package(name, platform, details) for platform in config["platforms"].keys()
+        ]
+    else:
+        for platform, info in details.items():
+            if platform == "default":
+                packages += [
+                    Package(name, platform, info)
+                    for platform in config["platforms"].keys()
+                    if platform not in details.keys()
+                ]
+            else:
+                packages += [Package(name, platform, info)]
 
 
 def calc_sha256_file(filepath: Path, block_size: int = 2**20):
@@ -410,6 +424,7 @@ matrix = [
     (package, platform, arch)
     for package in packages
     for platform, arch in platform_arch_pairs
+    if package.platform == platform
 ]
 
 rich_print(rf"[bold dim]\[1/3][/bold dim] Downloading...")
