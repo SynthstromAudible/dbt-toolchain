@@ -56,20 +56,29 @@ class Package:
     def __init__(
         self,
         name: str,
-        source: Source,
         details: Dict[str, str],
     ):
         """"""
         self.name = name
-        self.source = source
         self.details = details
 
+    def __repr__(self):
+        return f"Package(name='{self.name}', details='{self.details}')"
+
+    def get_source(self, platform: str, arch: str) -> Source:
+        source_key = self.details["source"]
+        if type(source_key) == dict:
+            return sources[source_key[platform]]
+        else:
+            return sources[source_key]
+
     def format_url(self, platform: str, arch: str) -> str:
-        ext = self.source.ext_map.get(platform) or self.source.ext_map["default"]
-        platform = self.source.platform_map.get(platform) or platform
-        return self.source.url.format(
+        source = self.get_source(platform, arch)
+        ext = source.ext_map.get(platform) or source.ext_map["default"]
+        platform = source.platform_map.get(platform) or platform
+        return source.url.format(
             platform=platform,
-            arch=self.source.arch_map.get(arch) or arch,
+            arch=source.arch_map.get(arch) or arch,
             name=self.name,
             ext=ext,
             **self.details,
@@ -84,22 +93,24 @@ def matches_sha256(filepath: Path, hash_url: str):
 
 
 def download_package(package: Package, platform: str, arch: str) -> None:
+    print(package)
     url = package.format_url(platform, arch)
-    hash_url = package.source.sha256.format(url=url)
+    hash_url = package.get_source(platform, arch).sha256.format(url=url)
     filename = os.path.basename(url)
     filepath = CACHE_PATH / filename
 
     if filepath.is_file():
         print(f"Found {filename}, checking SHA256...", end="")
-        if matches_sha256(filepath, hash_url):
-            rich_print("[green bold]VALID")
-            return
-        else:
-            rich_print("[red bold]Error![/red bold]")
-            sys.exit(-1)
+        if hash_url:
+            if matches_sha256(filepath, hash_url):
+                rich_print("[green bold]VALID")
+                return
+            else:
+                rich_print("[red bold]Error![/red bold]")
+                sys.exit(-1)
 
     download_file(url, filepath)
-    if not matches_sha256(filepath, hash_url):
+    if hash_url and not matches_sha256(filepath, hash_url):
         rich_print(
             f"[red bold]Error![/red bold] SHA256 signature did not match for file: {filepath.name}"
         )
@@ -112,7 +123,10 @@ def extract_package(
     url = package.format_url(platform, arch)
     filepath = CACHE_PATH / os.path.basename(url)
     dest_path = STAGING_PATH / f"{platform}-{arch}"
-    ext = package.source.ext_map.get(platform) or package.source.ext_map["default"]
+    ext = (
+        package.get_source(platform, arch).ext_map.get(platform)
+        or package.get_source(platform, arch).ext_map["default"]
+    )
     include_file = ROOT_DIR / f"config/{platform}-{arch}-{package.name}.include"
 
     # print(f"Extracting {os}-{arch} {name}:")
@@ -152,12 +166,8 @@ for name, details in config["sources"].items():
         details.get("platform") or {},
     )
 
-for source, package in config["packages"].items():
-    for name, details in package.items():
-        if type(details) is str:
-            packages += [Package(name, sources[source], {"version": details})]
-        else:
-            packages += [Package(name, sources[source], details)]
+for name, details in config["packages"].items():
+    packages += [Package(name, details)]
 
 
 def calc_sha256_file(filepath: Path, block_size: int = 2**20):
@@ -327,7 +337,7 @@ def add_python_lib(lib_name: str):
     os.makedirs(wheel_dir, exist_ok=True)
 
     try:
-        cmd : List[str] = [
+        cmd: List[str] = [
             str(py_bin),
             "-m",
             "pip",
@@ -413,7 +423,7 @@ for t in matrix:
 
 add_python_lib("certifi")
 add_python_lib("ansi")
-add_python_lib("setuptools==69.2.0")
+add_python_lib("setuptools==72.0.0")
 
 # DIST/PACKAGE
 if DIST_PATH.exists():

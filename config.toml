@@ -1,4 +1,4 @@
-version = 18
+version = 19
 
 [platforms]
 [platforms.linux]
@@ -18,7 +18,7 @@ ext.default = "tar.gz"
 ext.win32 = "zip"
 arch.x86_64 = "x64"
 
-[sources.python]
+[sources.python-build-standalone]
 url = "https://github.com/astral-sh/python-build-standalone/releases/download/{date}/cpython-{version}+{date}-{arch}-{platform}-install_only.{ext}"
 sha256 = "{url}.sha256"
 ext.default = "tar.gz"
@@ -27,10 +27,17 @@ platform.darwin = "apple-darwin"
 platform.linux = "unknown-linux-gnu"
 platform.win32 = "pc-windows-msvc-shared"
 
+[sources.kitware-cmake]
+url = "https://github.com/Kitware/CMake/releases/download/v{version}/cmake-{version}-{platform}-{arch}.{ext}"
+sha256 = ""
+ext.default = "tar.gz"
+ext.win32 = "zip"
+platform.win32 = "windows"
+
 [packages]
-xpack.openocd = "0.12.0-4"
-xpack.cmake = "3.27.9-1"
-xpack.ninja-build = "1.11.1-3"
-xpack.arm-none-eabi-gcc = "14.2.1-1.1"
-xpack.clang = "18.1.8-2"
-python.python = { version = "3.13.1", date = 20241219 }
+openocd = { version = "0.12.0-4", source = "xpack" }
+cmake = { version = "3.27.9-1", source = { win32 = "kitware-cmake", linux = "xpack", darwin = "xpack" } }
+ninja-build = { version = "1.11.1-3", source = "xpack" }
+arm-none-eabi-gcc = { version = "14.2.1-1.1", source = "xpack" }
+clang = { version = "18.1.8-2", source = "xpack" }
+python = { version = "3.13.1", date = 20241219, source = "python-build-standalone" }
