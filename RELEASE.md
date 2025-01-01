@@ -1,2 +1,2 @@
-# Changes from v17
-Update xPack tools and Python
+# Changes from v18
+Switch to separate CMake version for Windows until xpack-cmake fixes FetchContent issue
