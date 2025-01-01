@@ -438,7 +438,7 @@ for t in matrix:
 
 add_python_lib("certifi")
 add_python_lib("ansi")
-add_python_lib("setuptools==72.0.0")
+add_python_lib("setuptools==75.6.0")
 
 # DIST/PACKAGE
 if DIST_PATH.exists():
