@@ -154,7 +154,7 @@ def extract_package(
 
         if force_reextract or not dest_path.exists():
             extractor(filepath, dest_path, include_file)
-            shift_subdir_up(package.name, dest_path)
+            shift_subdir_up(package.name, dest_path.parent)
 
 
 # from https://stackoverflow.com/a/63831344
