@@ -129,25 +129,32 @@ def download_package(package: Package, platform: str, arch: str) -> None:
 def extract_package(
     package: Package, platform: str, arch: str, force_reextract: bool = False
 ):
+    dest_path = STAGING_PATH / f"{platform}-{arch}" / package.name
     url = package.format_url(arch)
-    filepath = CACHE_PATH / os.path.basename(url)
-    dest_path = STAGING_PATH / f"{platform}-{arch}"
-    ext = package.source.ext_map.get(platform) or package.source.ext_map["default"]
-    include_file = ROOT_DIR / "config" / f"{platform}-{arch}-{package.name}.include"
+    filename = os.path.basename(url)
+    filepath = CACHE_PATH / filename
 
-    # print(f"Extracting {os}-{arch} {name}:")
-    if ext == "zip":
-        extractor = unzip_archive
+    if not filepath.suffix or filepath.suffix is ".exe":
+        dest_path = dest_path / "bin" / filename
+        os.makedirs(dest_path, exist_ok=True)
+        shutil.copyfile(filepath, dest_path)
     else:
-        extractor = untar_archive
+        # Assume an archive if it has a
+        ext = package.source.ext_map.get(platform) or package.source.ext_map["default"]
+        include_file = ROOT_DIR / "config" / f"{platform}-{arch}-{package.name}.include"
 
-    decompress_path = dest_path / package.name
-    if force_reextract and decompress_path.exists():
-        shutil.rmtree(decompress_path)
+        # print(f"Extracting {os}-{arch} {name}:")
+        if ext == "zip":
+            extractor = unzip_archive
+        else:
+            extractor = untar_archive
 
-    if force_reextract or not decompress_path.exists():
-        extractor(filepath, decompress_path, include_file)
-        shift_subdir_up(package.name, dest_path)
+        if force_reextract and dest_path.exists():
+            shutil.rmtree(dest_path)
+
+        if force_reextract or not dest_path.exists():
+            extractor(filepath, dest_path, include_file)
+            shift_subdir_up(package.name, dest_path)
 
 
 # from https://stackoverflow.com/a/63831344
@@ -239,7 +246,7 @@ def untar_archive(
             # tar.extractall(path=dest_dir, members=members)
             with tqdm(total=len(members), desc=tar_file.name, unit="files") as pbar:
                 for member in members:
-                    tar.extract(member, path=dest_dir, filter='data')
+                    tar.extract(member, path=dest_dir, filter="data")
                     pbar.update(1)
                     pbar.refresh()
                 pbar.refresh()
