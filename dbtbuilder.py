@@ -134,7 +134,7 @@ def extract_package(
     filename = os.path.basename(url)
     filepath = CACHE_PATH / filename
 
-    if not filepath.suffix or filepath.suffix is ".exe":
+    if not filepath.suffix or filepath.suffix == ".exe":
         dest_path = dest_path / "bin" / package.name
         os.makedirs(dest_path.parent, exist_ok=True)
         shutil.copyfile(filepath, dest_path)
