@@ -14,7 +14,7 @@ import urllib.request
 import warnings
 import zipfile
 from pathlib import Path
-from typing import Dict, List
+from typing import Any
 
 # External libraries
 from rich import print as rich_print
@@ -37,14 +37,16 @@ class Source:
         self,
         name: str,
         url: str,
-        sha256: str,
-        arch_map: Dict[str, str] = {},
-        ext_map: Dict[str, str] = {},
-        platform_map: Dict[str, str] = {},
+        checksum_type: str,
+        checksum_url: str,
+        arch_map: dict[str, str] = {},
+        ext_map: dict[str, str] = {},
+        platform_map: dict[str, str] = {},
     ):
         self.name = name
         self.url = url
-        self.sha256 = sha256
+        self.checksum_type = checksum_type
+        self.checksum_url = checksum_url
         self.arch_map = arch_map
         self.ext_map = ext_map
         self.platform_map = platform_map
@@ -57,25 +59,27 @@ class Package:
         self,
         name: str,
         platform: str,
-        details: Dict[str, str],
+        details: dict[str, str],
+        sources: dict[str, Source],
     ):
         """"""
         self.name = name
         self.platform = platform
         self.details = details
+        self.source = self._get_source(sources)
 
     def __repr__(self):
         return f"Package(name='{self.name}', platform='{self.platform}', details='{self.details}')"
 
-    def get_source(self) -> Source:
+    def _get_source(self, sources: dict[str, Source]) -> Source:
         source_key = self.details["source"]
-        if type(source_key) == dict:
+        if type(source_key) == dict:  # type: ignore
             return sources[source_key[self.platform]]
         else:
             return sources[source_key]
 
     def format_url(self, arch: str) -> str:
-        source = self.get_source()
+        source = self.source
         ext = source.ext_map.get(self.platform) or source.ext_map["default"]
         platform = source.platform_map.get(self.platform) or self.platform
         return source.url.format(
@@ -87,23 +91,27 @@ class Package:
         )
 
 
-def matches_sha256(filepath: Path, hash_url: str):
-    with urllib.request.urlopen(hash_url) as response:
+def checksum_remote(filepath: Path, checksum_type: str, checksum_url: str):
+    with urllib.request.urlopen(checksum_url) as response:
         hash = response.read().decode("ascii").strip().split()[0]
-        actual_hash = calc_sha256_file(filepath)
-        return actual_hash == hash
+        with open(filepath, "rb", buffering=0) as f:
+            actual_hash = hashlib.file_digest(f, checksum_type).hexdigest()  # type: ignore
+            return actual_hash == hash
 
 
 def download_package(package: Package, platform: str, arch: str) -> None:
     url = package.format_url(arch)
-    hash_url = package.get_source().sha256.format(url=url)
+    checksum_type = package.source.checksum_type
+    checksum_url = package.source.checksum_url.format(
+        url=url, url_no_ext=os.path.splitext(url)[0]
+    )
     filename = os.path.basename(url)
     filepath = CACHE_PATH / filename
 
     if filepath.is_file():
-        print(f"Found {filename}, checking SHA256...", end="")
-        if hash_url:
-            if matches_sha256(filepath, hash_url):
+        print(f"Found {filename}, checking {checksum_type.upper()}...", end="")
+        if checksum_url:
+            if checksum_remote(filepath, checksum_type, checksum_url):
                 rich_print("[green bold]VALID")
                 return
             else:
@@ -111,9 +119,9 @@ def download_package(package: Package, platform: str, arch: str) -> None:
                 sys.exit(-1)
 
     download_file(url, filepath)
-    if hash_url and not matches_sha256(filepath, hash_url):
+    if checksum_url and not checksum_remote(filepath, checksum_type, checksum_url):
         rich_print(
-            f"[red bold]Error![/red bold] SHA256 signature did not match for file: {filepath.name}"
+            f"[red bold]Error![/red bold] ${checksum_type.upper()} signature did not match for file: {filepath.name}"
         )
         sys.exit(-1)
 
@@ -124,11 +132,8 @@ def extract_package(
     url = package.format_url(arch)
     filepath = CACHE_PATH / os.path.basename(url)
     dest_path = STAGING_PATH / f"{platform}-{arch}"
-    ext = (
-        package.get_source().ext_map.get(platform)
-        or package.get_source().ext_map["default"]
-    )
-    include_file = ROOT_DIR / f"config/{platform}-{arch}-{package.name}.include"
+    ext = package.source.ext_map.get(platform) or package.source.ext_map["default"]
+    include_file = ROOT_DIR / "config" / f"{platform}-{arch}-{package.name}.include"
 
     # print(f"Extracting {os}-{arch} {name}:")
     if ext == "zip":
@@ -143,55 +148,6 @@ def extract_package(
     if force_reextract or not decompress_path.exists():
         extractor(filepath, decompress_path, include_file)
         shift_subdir_up(package.name, dest_path)
-
-
-sources: Dict[str, Source] = {}
-packages: List[Package] = []
-
-with open(ROOT_DIR / "config.toml", "rb") as f:
-    config = tomllib.load(f)
-
-platform_arch_pairs = [
-    (name, arch)
-    for (name, details) in config["platforms"].items()
-    for arch in details["arch"]
-]
-
-for name, details in config["sources"].items():
-    sources[name] = Source(
-        name,
-        details["url"],
-        details["sha256"],
-        details.get("arch") or {},
-        details.get("ext") or {},
-        details.get("platform") or {},
-    )
-
-for name, details in config["packages"].items():
-    if "source" in details.keys():
-        packages += [
-            Package(name, platform, details) for platform in config["platforms"].keys()
-        ]
-    else:
-        for platform, info in details.items():
-            if platform == "default":
-                packages += [
-                    Package(name, platform, info)
-                    for platform in config["platforms"].keys()
-                    if platform not in details.keys()
-                ]
-            else:
-                packages += [Package(name, platform, info)]
-
-
-def calc_sha256_file(filepath: Path, block_size: int = 2**20):
-    with open(filepath, "rb", buffering=0) as f:
-        return hashlib.file_digest(f, "sha256").hexdigest()  # type: ignore
-
-
-def calc_md5_file(filepath: Path, block_size: int = 2**20):
-    with open(filepath, "rb", buffering=0) as f:
-        return hashlib.file_digest(f, "md5").hexdigest()  # type: ignore
 
 
 # from https://stackoverflow.com/a/63831344
@@ -283,7 +239,7 @@ def untar_archive(
             # tar.extractall(path=dest_dir, members=members)
             with tqdm(total=len(members), desc=tar_file.name, unit="files") as pbar:
                 for member in members:
-                    tar.extract(member, path=dest_dir)
+                    tar.extract(member, path=dest_dir, filter='data')
                     pbar.update(1)
                     pbar.refresh()
                 pbar.refresh()
@@ -338,7 +294,7 @@ def get_sysname_arch():
     return (sysname, arch)
 
 
-def add_python_lib(lib_name: str):
+def add_python_lib(lib_name: str, platform_arch_pairs: list[tuple[str, str]]):
     sysname, arch = get_sysname_arch()
     this_path = STAGING_PATH / f"{sysname}-{arch}"
 
@@ -351,7 +307,7 @@ def add_python_lib(lib_name: str):
     os.makedirs(wheel_dir, exist_ok=True)
 
     try:
-        cmd: List[str] = [
+        cmd: list[str] = [
             str(py_bin),
             "-m",
             "pip",
@@ -382,7 +338,7 @@ def add_python_lib(lib_name: str):
         print(f"Error: {e}")
 
 
-def package_dist(platform: str, arch: str):
+def package_dist(config: dict[str, Any], platform: str, arch: str):
     dist_os_path = STAGING_PATH / f"{platform}-{arch}"
 
     if dist_os_path.is_dir():
@@ -416,37 +372,81 @@ def package_dist(platform: str, arch: str):
                 sha256_file.write(sha256_hash)
 
 
-# Location for all the files downloaded.
-STAGING_PATH.mkdir(exist_ok=True)
+def main():
+    sources: dict[str, Source] = {}
+    packages: list[Package] = []
 
-# Fetch, verify, and extract all the required toolchain tools
-matrix = [
-    (package, platform, arch)
-    for package in packages
-    for platform, arch in platform_arch_pairs
-    if package.platform == platform
-]
+    with open(ROOT_DIR / "config.toml", "rb") as f:
+        config = tomllib.load(f)
 
-rich_print(rf"[bold dim]\[1/3][/bold dim] Downloading...")
-for t in matrix:
-    download_package(*t)
+    platform_arch_pairs = [
+        (name, arch)
+        for (name, details) in config["platforms"].items()
+        for arch in details["arch"]
+    ]
+
+    for name, details in config["sources"].items():
+        sources[name] = Source(
+            name,
+            details["url"],
+            details.get("checksum_type") or "sha256",
+            details.get("checksum_url"),
+            details.get("arch") or {},
+            details.get("ext") or {},
+            details.get("platform") or {},
+        )
+
+    for name, details in config["packages"].items():
+        if "source" in details.keys():
+            packages += [
+                Package(name, platform, details, sources)
+                for platform in config["platforms"].keys()
+            ]
+        else:
+            for platform, info in details.items():
+                if platform == "default":
+                    packages += [
+                        Package(name, platform, info, sources)
+                        for platform in config["platforms"].keys()
+                        if platform not in details.keys()
+                    ]
+                else:
+                    packages += [Package(name, platform, info, sources)]
+
+    # Location for all the files downloaded.
+    STAGING_PATH.mkdir(exist_ok=True)
+
+    # Fetch, verify, and extract all the required toolchain tools
+    matrix = [
+        (package, platform, arch)
+        for package in packages
+        for platform, arch in platform_arch_pairs
+        if package.platform == platform
+    ]
+
+    rich_print(rf"[bold dim]\[1/3][/bold dim] Downloading...")
+    for t in matrix:
+        download_package(*t)
+
+    rich_print(rf"[bold dim]\[2/3][/bold dim] Extracting...")
+    for t in matrix:
+        extract_package(*t)
+
+    add_python_lib("certifi", platform_arch_pairs)
+    add_python_lib("ansi", platform_arch_pairs)
+    add_python_lib("setuptools==75.8.0", platform_arch_pairs)
+
+    # DIST/PACKAGE
+    if DIST_PATH.exists():
+        shutil.rmtree(DIST_PATH)
+    DIST_PATH.mkdir()
+
+    rich_print(rf"[bold dim]\[3/3][/bold dim] Compressing toolpacks...")
+    for platform, arch in platform_arch_pairs:
+        package_dist(config, platform, arch)
+
+    print("=^._.^= DONE =^._.^=")
 
 
-rich_print(rf"[bold dim]\[2/3][/bold dim] Extracting...")
-for t in matrix:
-    extract_package(*t)
-
-add_python_lib("certifi")
-add_python_lib("ansi")
-add_python_lib("setuptools==75.6.0")
-
-# DIST/PACKAGE
-if DIST_PATH.exists():
-    shutil.rmtree(DIST_PATH)
-DIST_PATH.mkdir()
-
-rich_print(rf"[bold dim]\[3/3][/bold dim] Compressing toolpacks...")
-for platform, arch in platform_arch_pairs:
-    package_dist(platform, arch)
-
-print("=^._.^= DONE =^._.^=")
+if __name__ == "__main__":
+    main()

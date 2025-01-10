@@ -13,24 +13,40 @@ arch = ["x86_64"]
 [sources]
 [sources.xpack]
 url = "https://github.com/xpack-dev-tools/{name}-xpack/releases/download/v{version}/xpack-{name}-{version}-{platform}-{arch}.{ext}"
-sha256 = "{url}.sha"
+checksum_url = "{url}.sha"
 ext.default = "tar.gz"
 ext.win32 = "zip"
 arch.x86_64 = "x64"
 
 [sources.python-build-standalone]
 url = "https://github.com/astral-sh/python-build-standalone/releases/download/{date}/cpython-{version}+{date}-{arch}-{platform}-install_only.{ext}"
-sha256 = "{url}.sha256"
+checksum_url = "{url}.sha256"
 ext.default = "tar.gz"
 arch.arm64 = "aarch64"
 platform.darwin = "apple-darwin"
 platform.linux = "unknown-linux-gnu"
 platform.win32 = "pc-windows-msvc-shared"
 
+[sources.clang-tools-static-binaries]
+url = "https://github.com/muttleyxd/clang-tools-static-binaries/releases/latest/download/{name}-{version}_{platform}-{arch}{ext}"
+checksum_type = "sha512"
+checksum_url = "{url_no_ext}.sha512sum"
+ext.default = ""
+ext.win32 = ".exe"
+platform.darwin = "macosx"
+platform.win32 = "windows"
+arch.arm64 = "amd64" # until https://github.com/muttleyxd/clang-tools-static-binaries/pull/54 is merged
+arch.x86_64 = "amd64"
+
+
 [packages]
 cmake = { version = "3.27.9-1", source = "xpack"} # CMake on Windows is borked after this version running from a subprocess (i.e. from DBT)
 openocd = { version = "0.12.0-4", source = "xpack" }
 ninja-build = { version = "1.11.1-3", source = "xpack" }
 arm-none-eabi-gcc = { version = "14.2.1-1.1", source = "xpack" }
-clang = { version = "18.1.8-2", source = "xpack" }
-python = { version = "3.13.1", date = 20241219, source = "python-build-standalone" }
+
+clang-format = { version = "19", source = "clang-tools-static-binaries" }
+#clang-tidy = { version = "19", source = "clang-tools-static-binaries" }
+
+# pinned to this until python-rtmidi updates their precompiled binaries at https://pypi.org/project/python-rtmidi/#files
+python = { version = "3.12.8", date="20250106", source = "python-build-standalone" }
