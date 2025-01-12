@@ -134,12 +134,14 @@ def extract_package(
     filename = os.path.basename(url)
     filepath = CACHE_PATH / filename
 
+    # If binary or raw file, just move
     if not filepath.suffix or filepath.suffix == ".exe":
-        dest_path = dest_path / "bin" / package.name
+        dest_path = dest_path / (package.name + filepath.suffix)
         os.makedirs(dest_path.parent, exist_ok=True)
         shutil.copyfile(filepath, dest_path)
+
     else:
-        # Assume an archive if it has a
+        # Extract an archive
         ext = package.source.ext_map.get(platform) or package.source.ext_map["default"]
         include_file = ROOT_DIR / "config" / f"{platform}-{arch}-{package.name}.include"
 
