@@ -1,6 +1,6 @@
 # syntax=docker/dockerfile:1-labs
 # Download and unpack the toolchain on the build host architecture
-FROM --platform=$BUILDPLATFORM ubuntu:latest as toolchain-unpacker
+FROM --platform=$BUILDPLATFORM ubuntu:24.04 as toolchain-unpacker
 ARG BUILDPLATFORM
 ARG DBT_VERSION
 
@@ -43,7 +43,7 @@ LOAD_TOOLCHAIN
 RUN useradd -ms /bin/bash nonroot
 
 # The build container
-FROM ubuntu:latest AS builder
+FROM ubuntu:24.04 AS builder
 ARG DBT_VERSION
 # top-of-tree as of 2024-04-11
 ARG DELUGE_SRC_ORG=synthstromaudible
