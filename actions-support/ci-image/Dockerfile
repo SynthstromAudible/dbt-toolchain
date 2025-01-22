@@ -47,7 +47,7 @@ FROM ubuntu:24.04 AS builder
 ARG DBT_VERSION
 # top-of-tree as of 2024-04-11
 ARG DELUGE_SRC_ORG=synthstromaudible
-ARG DELUGE_SRC_COMMIT=2b653a948368ce114387c4200f1412be9e128d19
+ARG DELUGE_SRC_COMMIT=6de28b4d3b91a5115bba2e0b972dbc9f3fdf10e8
 ARG TARGETARCH
 
 # Install tools required by DBT
@@ -81,6 +81,18 @@ GIT_CHECKOUT
 RUN <<SMOKE_BUILD bash
   set -ex
   cd /build
+
+  # Make sure we're smoke building against the correct toolchain version.
+  #
+  # If this test fails, edit DELUGE_SRC_COMMIT above to point to a commit that
+  # edits toolchain/REQUIRED_VERSION in Deluge repo to point to the version
+  # we're trying to build.
+  required_version=\$(<toolchain/REQUIRED_VERSION)
+  if [[ ! "${DBT_VERSION}" = "\${required_version}" ]]; then
+      echo "Toolchain version mismatch";
+      exit 1
+  fi
+
   # We only actually build on amd64 because running the compiler under
   # emulation is extremely slow.
   case "$TARGETARCH" in
