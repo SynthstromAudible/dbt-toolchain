@@ -1,6 +1,11 @@
 on:
-  - push
-  - create
+  push:
+    branches:
+      - 'main'
+  create:
+  pull_request:
+    branches:
+      - 'main'
 
 env:
   REGISTRY: ghcr.io

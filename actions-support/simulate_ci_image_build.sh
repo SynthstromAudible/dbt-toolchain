@@ -14,7 +14,7 @@ rsync -cv ../dist/dbt-toolchain-*-linux*.tar.gz ./ci-image/dist/
 docker buildx build \
   --platform linux/amd64 \
   --load \
-  -t deluge-ci-image:v$(cat ../VERSION) \
+  -t deluge-ci-image:v$(python3 ../version.py) \
   -f ./ci-image/Dockerfile \
   --build-arg DBT_VERSION=$(python3 ../version.py) \
   --build-arg $(grep ./ci-image/Dockerfile "^ARG DELUGE_SRC_ORG=" | sed 's_ARG __g') \
