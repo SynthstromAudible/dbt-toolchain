@@ -1,4 +1,4 @@
-version = 21
+version = 22
 
 [platforms]
 [platforms.linux]
@@ -45,7 +45,7 @@ openocd = { version = "0.12.0-4", source = "xpack" }
 ninja-build = { version = "1.11.1-3", source = "xpack" }
 arm-none-eabi-gcc = { version = "14.2.1-1.1", source = "xpack" }
 
-clang-format = { version = "19", source = "clang-tools-static-binaries" }
+clang-format = { version = "19", source = "clang-tools-static-binaries", set-executable = true }
 #clang-tidy = { version = "19", source = "clang-tools-static-binaries" }
 
 # pinned to this until python-rtmidi updates their precompiled binaries at https://pypi.org/project/python-rtmidi/#files

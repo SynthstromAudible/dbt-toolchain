@@ -105,6 +105,7 @@ def download_package(package: Package, platform: str, arch: str) -> None:
     checksum_url = package.source.checksum_url.format(
         url=url, url_no_ext=os.path.splitext(url)[0]
     )
+    set_executable = package.details.get('set-executable', False)
     filename = os.path.basename(url)
     filepath = CACHE_PATH / filename
 
@@ -124,6 +125,9 @@ def download_package(package: Package, platform: str, arch: str) -> None:
             f"[red bold]Error![/red bold] ${checksum_type.upper()} signature did not match for file: {filepath.name}"
         )
         sys.exit(-1)
+
+    if set_executable and hasattr(shutil, 'posix'):
+        shutil.posix.chmod(filepath, 0o777)
 
 
 def extract_package(
