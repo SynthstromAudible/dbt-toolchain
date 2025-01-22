@@ -1,5 +1,8 @@
 #!/usr/bin/env python3
 import tomllib
+from pathlib import Path
 
-with open("config.toml", "rb") as f:
+path = Path(__file__).parent / "config.toml"
+
+with open(path, "rb") as f:
     print(tomllib.load(f)['version'])
