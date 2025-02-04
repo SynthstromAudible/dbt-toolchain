@@ -73,7 +73,7 @@ class Package:
 
     def _get_source(self, sources: dict[str, Source]) -> Source:
         source_key = self.details["source"]
-        if type(source_key) == dict:  # type: ignore
+        if type(source_key) is dict:  # type: ignore
             return sources[source_key[self.platform]]
         else:
             return sources[source_key]
@@ -437,11 +437,11 @@ def main():
         if package.platform == platform
     ]
 
-    rich_print(rf"[bold dim]\[1/3][/bold dim] Downloading...")
+    rich_print(r"[bold dim]\[1/3][/bold dim] Downloading...")
     for t in matrix:
         download_package(*t)
 
-    rich_print(rf"[bold dim]\[2/3][/bold dim] Extracting...")
+    rich_print(r"[bold dim]\[2/3][/bold dim] Extracting...")
     for t in matrix:
         extract_package(*t)
 
@@ -454,7 +454,7 @@ def main():
         shutil.rmtree(DIST_PATH)
     DIST_PATH.mkdir()
 
-    rich_print(rf"[bold dim]\[3/3][/bold dim] Compressing toolpacks...")
+    rich_print(r"[bold dim]\[3/3][/bold dim] Compressing toolpacks...")
     for platform, arch in platform_arch_pairs:
         package_dist(config, platform, arch)
 
