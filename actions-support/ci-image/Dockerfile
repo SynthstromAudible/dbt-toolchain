@@ -109,7 +109,7 @@ RUN rm -rf /dbt/toolchain/linux-$TARGETARCH/python/wheel/*
 #
 # Build the final image, based on distroless
 #
-FROM ubuntu:latest as final
+FROM ubuntu:24.04 as final
 ARG TARGETARCH
 
 # Make sure we have git, as it's needed at runtime
