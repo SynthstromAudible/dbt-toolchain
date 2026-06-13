@@ -1,4 +1,3 @@
-# Changes from v21
+# Changes from v22
 
-- Fix executable bit for clang-format binaries on OSX and Linux
-- Only include 1 toolchain version in the CI image
+- Update arm-none-eabi-gcc to 15.2.1
