@@ -45,9 +45,9 @@ RUN useradd -ms /bin/bash nonroot
 # The build container
 FROM ubuntu:24.04 AS builder
 ARG DBT_VERSION
-# top-of-tree as of 2024-04-11
+# top-of-tree as of 2026-06-14
 ARG DELUGE_SRC_ORG=synthstromaudible
-ARG DELUGE_SRC_COMMIT=6de28b4d3b91a5115bba2e0b972dbc9f3fdf10e8
+ARG DELUGE_SRC_COMMIT=3d0ee66fd70b70fdf45daf624a1546524fae80ad
 ARG TARGETARCH
 
 # Install tools required by DBT
