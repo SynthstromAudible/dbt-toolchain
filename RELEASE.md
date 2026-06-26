@@ -1,3 +1,3 @@
-# Changes from v22
+# Changes from v23
 
-- Update arm-none-eabi-gcc to 15.2.1
+- Update cmake to 3.31.9-1
