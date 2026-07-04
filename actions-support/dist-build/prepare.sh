@@ -14,6 +14,4 @@ apt-get install -y \
   zip \
   python3 \
   python3-pip \
-  python3-tqdm \
-  python3-rich \
-  python3-requests
+  python3-venv
