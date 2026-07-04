@@ -33,6 +33,9 @@ RUN <<LOAD_TOOLCHAIN bash
     find /dbt/toolchain/v\${DBT_VERSION}/linux-\$target_arch/python \
       -exec chown 1000:1000 {} \+ -exec chmod a+rw {} \+
   done
+  # Smoke-check that the Rust bootstrapper shipped and is runnable
+  test -x linux-x86_64/rustup-init/rustup-init
+  ./linux-x86_64/rustup-init/rustup-init --version
   # kinda stupid hack: move linux-x86_64 to linux-amd64 so we can do a COPY
   # --from below using the Docker TARGETARCH. We then move it back to the right position
   mv /dbt/toolchain/v\${DBT_VERSION}/linux-x86_64/ /dbt/toolchain/v\${DBT_VERSION}/linux-amd64
