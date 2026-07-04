@@ -4,14 +4,14 @@
 
 **Goal:** Ship the `rustup-init` bootstrapper in every dbt-toolchain toolpack so DelugeFirmware can obtain its pinned nightly Rust toolchain.
 
-**Architecture:** Add a `rust` source and a `rustup-init` package to `config.toml`. This reuses the existing raw-binary + `set-executable` code path already used by `clang-format`, so `dbtbuilder.py` needs no changes. A smoke-test assertion in the CI-image Dockerfile confirms the binary ships and runs. The heavyweight nightly toolchain is fetched on first build by rustup (into the firmware's toolchain tree), never bundled here.
+**Architecture:** Add a `rust` source and a `rustup-init` package to `config.toml`, reusing the existing raw-binary + `set-executable` code path used by `clang-format`. Two small `dbtbuilder.py` fixes are also required (discovered during execution): unique-per-platform cache filenames (rustup-init's URL basename is identical across platforms and collides), and applying the executable bit to the *staged* file rather than the cache copy (so the shipped binary is actually runnable). A smoke-test assertion in the CI-image Dockerfile confirms the binary ships and runs. The heavyweight nightly toolchain is fetched on first build by rustup (into the firmware's toolchain tree), never bundled here.
 
 **Tech Stack:** Python 3.12 (`dbtbuilder.py`, stdlib `tomllib`), TOML config, Docker/buildx smoke test, rustup-init binaries from `static.rust-lang.org`.
 
 ## Global Constraints
 
 - Pin rustup to version **`1.28.2`** (stable checksum, dbt-style). If a newer rustup release exists at implementation time, use it and adjust the version string everywhere it appears.
-- **No changes to `dbtbuilder.py`.** The raw-binary + `set-executable` path already handles this package shape.
+- **Two `dbtbuilder.py` fixes are required** (found during execution, not anticipated in the spec): (1) cache filenames must be unique per platform-arch — `rustup-init`'s URL basename is identical across all non-Windows platforms and collides in `cache/`; (2) the executable bit must be applied to the staged file (which gets packaged), not the cache copy, or the shipped binary is not runnable. The second fix also corrects `clang-format`, which had the same latent issue.
 - rustup-init archive URL shape: `https://static.rust-lang.org/rustup/archive/{version}/{arch}-{platform}/{name}{ext}`, checksum at `{url}.sha256` (sha256, body `<hash> *./rustup-init`).
 - Version rules (from README): whole-number versions only; bump the top-level `version` in `config.toml`; edit `RELEASE.md`. **Do not create or push git tags** — tagging is a manual maintainer release step, out of scope for this plan.
 - Current `config.toml` `version` is `24`; this change bumps it to `25`.
@@ -23,9 +23,10 @@
 
 **Files:**
 - Modify: `config.toml` (add `[sources.rust]`, add `rustup-init` to `[packages]`, bump `version`)
+- Modify: `dbtbuilder.py` (unique-per-platform cache filenames; chmod the staged executable) — see Steps 3a/3b
 
 **Interfaces:**
-- Consumes: the existing `Source` / `Package` / `download_package` API in `dbtbuilder.py` (unchanged).
+- Consumes: the existing `Source` / `Package` / `download_package` API in `dbtbuilder.py`.
 - Produces: a `rustup-init` package resolving to these URLs (all verified HTTP 200 with `.sha256` siblings):
   - `linux-x86_64`  → `.../archive/1.28.2/x86_64-unknown-linux-gnu/rustup-init`
   - `linux-arm64`   → `.../archive/1.28.2/aarch64-unknown-linux-gnu/rustup-init`
@@ -101,6 +102,34 @@ to:
 version = 25
 ```
 
+- [ ] **Step 3a: Fix cache-filename collision in `dbtbuilder.py`**
+
+`rustup-init`'s URL basename is `rustup-init` for every non-Windows platform, so all variants collide at `cache/rustup-init` (wrong checksum / wrong staged binary). Make the cache filename unique. Both `download_package` (lines ~109-110) and `extract_package` (lines ~138-139) contain this identical pair — replace **both** occurrences:
+
+```python
+    filename = os.path.basename(url)
+    filepath = CACHE_PATH / filename
+```
+
+with:
+
+```python
+    filename = f"{platform}-{arch}-{os.path.basename(url)}"
+    filepath = CACHE_PATH / filename
+```
+
+- [ ] **Step 3b: Make `set-executable` apply to the staged file in `dbtbuilder.py`**
+
+`download_package` chmods the cache copy, but `extract_package` uses `shutil.copyfile` (no mode) to produce the staged file that actually gets packaged, so the shipped binary is `0644` (not runnable). In `extract_package`'s raw-binary branch, after the `shutil.copyfile(filepath, dest_path)` line, add the chmod:
+
+```python
+        shutil.copyfile(filepath, dest_path)
+        # copyfile drops permissions; re-apply the executable bit to the staged
+        # file (the one that gets packaged) when the package asks for it.
+        if package.details.get("set-executable", False):
+            os.chmod(dest_path, 0o755)
+```
+
 - [ ] **Step 4: Run the check to verify it passes**
 
 Run the same snippet from Step 1 again.
@@ -109,7 +138,7 @@ Expected output: the five resolved URLs printed, each followed by a `Found .../c
 - [ ] **Step 5: Commit**
 
 ```bash
-git add config.toml
+git add config.toml dbtbuilder.py
 git commit -m "Add rustup-init package (Rust toolchain bootstrapper)"
 ```
 

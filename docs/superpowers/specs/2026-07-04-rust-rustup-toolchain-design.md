@@ -160,12 +160,24 @@ on `PATH`-reachable disk.
 
 - `config.toml` — add `[sources.rust]`, add the `rustup-init` package, bump
   top-level `version`.
+- `dbtbuilder.py` — two fixes surfaced during implementation (see below).
 - `README.md` — add the Rust subsection.
 - docker smoke test (under `actions-support/` / `.github/`) — add the
   `rustup-init` presence + `--version` assertion.
 
-No changes to `dbtbuilder.py` are required: the raw-binary + `set-executable`
-path already handles this package shape.
+Two `dbtbuilder.py` fixes proved necessary (the raw-binary + `set-executable`
+path did *not* fully handle this package shape, contrary to the original
+assumption):
+
+1. **Unique cache filenames.** `rustup-init`'s URL basename is `rustup-init`
+   for every non-Windows platform (the host triple lives in the URL directory,
+   not the filename), so all variants collided at `cache/rustup-init`. Cache
+   filenames are now prefixed with `{platform}-{arch}-`.
+2. **Executable bit on the staged file.** `set-executable` chmod'd the cache
+   copy, but `extract_package` uses `shutil.copyfile` (data only) to produce the
+   staged file that actually gets packaged, so the shipped binary was `0644`.
+   The chmod is now applied to the staged file. This also corrects
+   `clang-format`, which had the same latent issue.
 
 ## Out of scope (separate DelugeFirmware follow-up)
 
