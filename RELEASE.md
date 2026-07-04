@@ -1,3 +1,3 @@
-# Changes from v23
+# Changes from v24
 
-- Update cmake to 3.31.9-1
+- Add `rustup-init` (Rust toolchain bootstrapper) to the toolpack

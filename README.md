@@ -43,3 +43,14 @@ In order to enable support for [DelugeProbe](https://github.com/litui/delugeprob
 
 #### Python
 Standalone Python requires `libcrypt.so.1` to be installed in the host Linux distribution. Where it's not included by default look for a `libxcrypt-compat` package or similar in your distribution package manager and install that.
+
+#### Rust (rustup)
+The toolchain ships `rustup-init`, the official Rust toolchain bootstrapper, as a single binary at `<toolchain>/rustup-init/rustup-init[.exe]`. The actual Rust nightly toolchain is **not** bundled — it is installed on first build by rustup, driven by DelugeFirmware's `rust-toolchain.toml` (nightly + `rust-src`, `clippy`, `rustfmt`, `llvm-tools-preview`, and the `armv7a-none-eabihf` / `i686-unknown-linux-gnu` targets). This means the first Rust build requires network access.
+
+DBT is responsible for bootstrapping rustup so it stays self-contained inside the portable toolchain tree (not the developer's `~/.rustup` / `~/.cargo`):
+
+* Point rustup/cargo state inside the toolchain tree: `RUSTUP_HOME=<toolchain>/rust/rustup`, `CARGO_HOME=<toolchain>/rust/cargo`
+* One-time bootstrap on first build: `rustup-init -y --no-modify-path --profile minimal --default-toolchain none`
+* Every build: prepend `$CARGO_HOME/bin` to `PATH`
+
+`--default-toolchain none` makes DelugeFirmware's `rust-toolchain.toml` the single source of truth; the first `cargo`/`rustc` call from the firmware tree auto-installs the pinned toolchain, components, and targets.
