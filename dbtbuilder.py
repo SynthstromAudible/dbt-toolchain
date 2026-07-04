@@ -106,7 +106,7 @@ def download_package(package: Package, platform: str, arch: str) -> None:
         url=url, url_no_ext=os.path.splitext(url)[0]
     )
     set_executable = package.details.get('set-executable', False)
-    filename = os.path.basename(url)
+    filename = f"{platform}-{arch}-{os.path.basename(url)}"
     filepath = CACHE_PATH / filename
 
     if filepath.is_file():
@@ -135,7 +135,7 @@ def extract_package(
 ):
     dest_path = STAGING_PATH / f"{platform}-{arch}" / package.name
     url = package.format_url(arch)
-    filename = os.path.basename(url)
+    filename = f"{platform}-{arch}-{os.path.basename(url)}"
     filepath = CACHE_PATH / filename
 
     # If binary or raw file, just move
@@ -143,6 +143,10 @@ def extract_package(
         dest_path = dest_path / (package.name + filepath.suffix)
         os.makedirs(dest_path.parent, exist_ok=True)
         shutil.copyfile(filepath, dest_path)
+        # copyfile drops permissions; re-apply the executable bit to the staged
+        # file (the one that gets packaged) when the package asks for it.
+        if package.details.get("set-executable", False):
+            os.chmod(dest_path, 0o755)
 
     else:
         # Extract an archive

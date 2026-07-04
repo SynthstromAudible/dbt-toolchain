@@ -1,4 +1,4 @@
-version = 24
+version = 25
 
 [platforms]
 [platforms.linux]
@@ -38,6 +38,16 @@ platform.win32 = "windows"
 arch.arm64 = "amd64" # until https://github.com/muttleyxd/clang-tools-static-binaries/pull/54 is merged
 arch.x86_64 = "amd64"
 
+[sources.rust]
+url = "https://static.rust-lang.org/rustup/archive/{version}/{arch}-{platform}/{name}{ext}"
+checksum_url = "{url}.sha256"
+ext.default = ""
+ext.win32 = ".exe"
+arch.arm64 = "aarch64"
+platform.linux = "unknown-linux-gnu"
+platform.darwin = "apple-darwin"
+platform.win32 = "pc-windows-msvc"
+
 
 [packages]
 cmake = { version = "3.31.9-1", source = "xpack"} # Watch for Windows subprocess breakage from DBT (was pinned to 3.27.9-1 for this reason)
@@ -47,6 +57,10 @@ arm-none-eabi-gcc = { version = "15.2.1-1.1", source = "xpack" }
 
 clang-format = { version = "19", source = "clang-tools-static-binaries", set-executable = true }
 #clang-tidy = { version = "19", source = "clang-tools-static-binaries" }
+
+# rustup bootstrapper; DBT runs this to install DelugeFirmware's pinned nightly.
+# See docs/superpowers/specs/2026-07-04-rust-rustup-toolchain-design.md
+rustup-init = { version = "1.28.2", source = "rust", set-executable = true }
 
 # pinned to this until python-rtmidi updates their precompiled binaries at https://pypi.org/project/python-rtmidi/#files
 python = { version = "3.12.8", date="20250106", source = "python-build-standalone" }
