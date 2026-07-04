@@ -15,7 +15,9 @@ cd ../
 
 docker run --rm -it \
   --user=$(id --user):$(id --group) \
+  --env HOME=/tmp \
   -v "$(pwd):$(pwd)" \
   --workdir "$(pwd)" \
-  --entrypoint "$(pwd)/dbtbuilder.py" \
-  dbt-builder:latest
+  --entrypoint bash \
+  dbt-builder:latest \
+  -c 'python3 -m venv /tmp/dbt-venv && /tmp/dbt-venv/bin/pip install --quiet . && /tmp/dbt-venv/bin/dbtbuilder'

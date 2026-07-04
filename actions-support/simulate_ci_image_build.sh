@@ -10,13 +10,16 @@ cd $(dirname $0)
 mkdir -p ./ci-image/dist
 rsync -cv ../dist/dbt-toolchain-*-linux*.tar.gz ./ci-image/dist/
 
+# Read the toolchain version straight from config.toml (stdlib only; no install).
+DBT_VERSION=$(python3 -c "import tomllib; print(tomllib.load(open('../config.toml','rb'))['version'])")
+
 # Run the build
 docker buildx build \
   --platform linux/amd64 \
   --load \
-  -t deluge-ci-image:v$(python3 ../version.py) \
+  -t deluge-ci-image:v${DBT_VERSION} \
   -f ./ci-image/Dockerfile \
-  --build-arg DBT_VERSION=$(python3 ../version.py) \
+  --build-arg DBT_VERSION=${DBT_VERSION} \
   --build-arg $(grep ./ci-image/Dockerfile "^ARG DELUGE_SRC_ORG=" | sed 's_ARG __g') \
   --build-arg $(grep ./ci-image/Dockerfile "^ARG DELUGE_SRC_COMMIT=" | sed 's_ARG __g')  \
   ./ci-image

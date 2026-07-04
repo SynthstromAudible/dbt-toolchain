@@ -25,14 +25,16 @@ jobs:
           python-version: '3.12'
       - name: Install required packages
         run: sudo bash ./actions-support/dist-build/prepare.sh
-      - name: Install python packages
-        run: pip3 install -r requirements.txt
+      - name: Install dbtbuilder
+        run: pip3 install ".[dev]"
+      - name: Run unit tests
+        run: python3 -m pytest
       - name: Set up QEMU
         uses: docker/setup-qemu-action@v3
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
       - name: Run build
-        run: python3 ./dbtbuilder.py
+        run: dbtbuilder
       - name: Remove download cache and staging
         run: rm -rf cache staging
       - name: Login to GHCR
@@ -53,7 +55,7 @@ jobs:
         run: |
           mkdir -p actions-support/ci-image/dist
           cp dist/dbt-toolchain-*-linux*.tar.gz actions-support/ci-image/dist
-          echo "version=$(python3 version.py)" >> "$GITHUB_OUTPUT"
+          echo "version=$(dbtbuilder --toolchain-version)" >> "$GITHUB_OUTPUT"
       - name: Build and push Docker images to GHCR
         uses: docker/build-push-action@v5
         with:
