@@ -14,7 +14,7 @@ dependencies = [
 ]
 
 [project.optional-dependencies]
-dev = ["pytest>=8"]
+dev = ["pytest>=8", "ruff==0.15.20"]
 
 [project.scripts]
 dbtbuilder = "dbtbuilder.cli:main"
