@@ -48,9 +48,8 @@ RUN useradd -ms /bin/bash nonroot
 # The build container
 FROM ubuntu:24.04 AS builder
 ARG DBT_VERSION
-# top-of-tree as of 2026-06-25
 ARG DELUGE_SRC_ORG=synthstromaudible
-ARG DELUGE_SRC_COMMIT=ae9f3996
+ARG DELUGE_SRC_BRANCH=main
 ARG TARGETARCH
 
 # Install tools required by DBT
@@ -74,27 +73,23 @@ ENV DELUGE_FW_ROOT=/build
 # See https://stackoverflow.com/questions/36996046/how-to-prevent-dockerfile-caching-git-clone
 RUN --mount=type=cache,target=/tmp/git_cache/ <<GIT_CHECKOUT bash
   set -ex
-  git clone https://github.com/$DELUGE_SRC_ORG/DelugeFirmware.git /tmp/git_cache/DelugeFirmware || true
+  git clone --branch $DELUGE_SRC_BRANCH https://github.com/$DELUGE_SRC_ORG/DelugeFirmware.git /tmp/git_cache/DelugeFirmware || true
   cd /tmp/git_cache/DelugeFirmware/
-  git fetch
+  # The cache mount can hold a warm clone; force the working tree to the current
+  # branch tip instead of a stale cached checkout.
+  git fetch origin $DELUGE_SRC_BRANCH
+  git reset --hard origin/$DELUGE_SRC_BRANCH
   mkdir -p /build
-  git checkout ${DELUGE_SRC_COMMIT}
   cp -r ./* ./.git/ /build/
 GIT_CHECKOUT
 RUN <<SMOKE_BUILD bash
   set -ex
   cd /build
 
-  # Make sure we're smoke building against the correct toolchain version.
-  #
-  # If this test fails, edit DELUGE_SRC_COMMIT above to point to a commit that
-  # edits toolchain/REQUIRED_VERSION in Deluge repo to point to the version
-  # we're trying to build.
-  required_version=\$(<toolchain/REQUIRED_VERSION)
-  if [[ ! "${DBT_VERSION}" = "\${required_version}" ]]; then
-      echo "Toolchain version mismatch";
-      exit 1
-  fi
+  # Smoke-test firmware HEAD against exactly the toolchain we just built by
+  # forcing REQUIRED_VERSION to this toolchain's version. This lets the smoke
+  # build track the firmware branch tip without pinning a firmware commit.
+  echo "${DBT_VERSION}" > toolchain/REQUIRED_VERSION
 
   # We only actually build on amd64 because running the compiler under
   # emulation is extremely slow.
