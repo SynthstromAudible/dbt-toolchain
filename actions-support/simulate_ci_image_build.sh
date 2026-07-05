@@ -20,6 +20,6 @@ docker buildx build \
   -t deluge-ci-image:v${DBT_VERSION} \
   -f ./ci-image/Dockerfile \
   --build-arg DBT_VERSION=${DBT_VERSION} \
-  --build-arg $(grep ./ci-image/Dockerfile "^ARG DELUGE_SRC_ORG=" | sed 's_ARG __g') \
-  --build-arg $(grep ./ci-image/Dockerfile "^ARG DELUGE_SRC_COMMIT=" | sed 's_ARG __g')  \
+  --build-arg $(grep "^ARG DELUGE_SRC_ORG=" ./ci-image/Dockerfile | sed 's_ARG __g') \
+  --build-arg $(grep "^ARG DELUGE_SRC_BRANCH=" ./ci-image/Dockerfile | sed 's_ARG __g') \
   ./ci-image
