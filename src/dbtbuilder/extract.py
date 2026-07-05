@@ -13,9 +13,7 @@ from .model import BuildTarget
 from .paths import BuildPaths
 
 
-def extract_target(
-    target: BuildTarget, paths: BuildPaths, force_reextract: bool = False
-) -> None:
+def extract_target(target: BuildTarget, paths: BuildPaths, force_reextract: bool = False) -> None:
     package = target.package
     platform, arch = target.platform, target.arch
     dest_path = paths.staging_dir(platform, arch) / package.name
@@ -104,9 +102,7 @@ def untar_archive(tar_file: Path, dest_dir: Path, include_list: Path) -> None:
             members = tar.getmembers()
             if include_list.is_file():
                 root_dir = os.path.commonprefix(tar.getnames())
-                includes = [
-                    f"{root_dir}/{s}" for s in _load_include_patterns(include_list)
-                ]
+                includes = [f"{root_dir}/{s}" for s in _load_include_patterns(include_list)]
                 members = [m for m in members if _is_included(m.name, includes)]
 
             with tqdm(total=len(members), desc=tar_file.name, unit="files") as pbar:
@@ -129,9 +125,7 @@ def unzip_archive(zip_file: Path, dest_dir: Path, include_list: Path) -> None:
             zip_includes: list[str] = []
             if include_list.is_file():
                 root_dir = os.path.commonprefix(zip_ref.namelist())
-                zip_includes = [
-                    f"{root_dir}{s}" for s in _load_include_patterns(include_list)
-                ]
+                zip_includes = [f"{root_dir}{s}" for s in _load_include_patterns(include_list)]
 
             members = [
                 info

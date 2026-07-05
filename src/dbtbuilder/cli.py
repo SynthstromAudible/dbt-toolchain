@@ -32,18 +32,14 @@ def build_parser() -> argparse.ArgumentParser:
         dest="arches",
         help="restrict the build to one or more arches (repeatable)",
     )
-    parser.add_argument(
-        "--force", action="store_true", help="re-extract even if staging exists"
-    )
+    parser.add_argument("--force", action="store_true", help="re-extract even if staging exists")
     parser.add_argument(
         "--only",
         choices=["download", "extract", "wheels", "package"],
         help="run a single build phase",
     )
     parser.add_argument("-v", "--verbose", action="store_true")
-    parser.add_argument(
-        "--version", action="version", version=f"dbtbuilder {__version__}"
-    )
+    parser.add_argument("--version", action="version", version=f"dbtbuilder {__version__}")
     parser.add_argument(
         "--toolchain-version",
         action="store_true",

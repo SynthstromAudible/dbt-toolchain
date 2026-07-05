@@ -13,16 +13,13 @@ def file_digest(path: Path, algo: str) -> str:
         return hashlib.file_digest(f, algo).hexdigest()
 
 
-def verify_remote(
-    path: Path, algo: str, checksum_url: str, asset_name: str | None = None
-) -> None:
+def verify_remote(path: Path, algo: str, checksum_url: str, asset_name: str | None = None) -> None:
     text = http.fetch_text(checksum_url)
     expected = _expected_digest(text, asset_name)
     actual = file_digest(path, algo)
     if actual != expected:
         raise ChecksumMismatch(
-            f"{algo.upper()} mismatch for {path.name}: "
-            f"expected {expected}, got {actual}"
+            f"{algo.upper()} mismatch for {path.name}: expected {expected}, got {actual}"
         )
 
 
@@ -41,8 +38,6 @@ def _expected_digest(text: str, asset_name: str | None) -> str:
             if os.path.basename(parts[-1].lstrip("*")) == asset_name:
                 return parts[0]
         if len(named) > 1:
-            raise ChecksumMismatch(
-                f"no checksum entry for {asset_name!r} in checksum file"
-            )
+            raise ChecksumMismatch(f"no checksum entry for {asset_name!r} in checksum file")
     # Bare digest, or a single unambiguous entry: first whitespace-delimited token.
     return text.strip().split()[0]

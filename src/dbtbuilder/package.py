@@ -13,13 +13,9 @@ from .paths import BuildPaths
 def create_tar_gz(src_dir: Path, dest_file: Path) -> None:
     with tarfile.open(dest_file, "w:gz", compresslevel=6) as tar:
         files = list(src_dir.rglob("*"))
-        with tqdm(
-            total=len(files), desc=f"Compressing {dest_file.name}", unit="files"
-        ) as pbar:
+        with tqdm(total=len(files), desc=f"Compressing {dest_file.name}", unit="files") as pbar:
             for file in files:
-                tar.add(
-                    file, arcname=file.relative_to(src_dir.parent), recursive=False
-                )
+                tar.add(file, arcname=file.relative_to(src_dir.parent), recursive=False)
                 pbar.update(1)
                 pbar.refresh()
 
@@ -27,9 +23,7 @@ def create_tar_gz(src_dir: Path, dest_file: Path) -> None:
 def create_zip(src_dir: Path, dest_file: Path) -> None:
     with zipfile.ZipFile(dest_file, "w", zipfile.ZIP_DEFLATED) as zipf:
         files = list(src_dir.rglob("*"))
-        with tqdm(
-            total=len(files), desc=f"Compressing {dest_file.name}", unit="files"
-        ) as pbar:
+        with tqdm(total=len(files), desc=f"Compressing {dest_file.name}", unit="files") as pbar:
             for file in files:
                 zipf.write(file, arcname=file.relative_to(src_dir.parent))
                 pbar.update(1)

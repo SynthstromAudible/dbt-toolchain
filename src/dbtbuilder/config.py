@@ -38,9 +38,7 @@ def parse_config(raw: dict[str, Any]) -> Config:
     for name, details in raw["packages"].items():
         packages.extend(_expand_package(name, details, platforms, sources))
 
-    return Config(
-        version=version, platforms=platforms, sources=sources, packages=packages
-    )
+    return Config(version=version, platforms=platforms, sources=sources, packages=packages)
 
 
 def _expand_package(
@@ -56,9 +54,7 @@ def _expand_package(
     for platform, info in details.items():
         if platform == "default":
             result.extend(
-                _make_package(name, p, info, sources)
-                for p in platforms
-                if p not in details
+                _make_package(name, p, info, sources) for p in platforms if p not in details
             )
         else:
             result.append(_make_package(name, platform, info, sources))
@@ -94,13 +90,9 @@ def _resolve_source(
         try:
             source_key = source_key[platform]
         except KeyError as e:
-            raise ConfigError(
-                f"package '{name}' has no source for platform '{platform}'"
-            ) from e
+            raise ConfigError(f"package '{name}' has no source for platform '{platform}'") from e
 
     try:
         return sources[source_key]
     except KeyError as e:
-        raise ConfigError(
-            f"package '{name}' references unknown source '{source_key}'"
-        ) from e
+        raise ConfigError(f"package '{name}' references unknown source '{source_key}'") from e

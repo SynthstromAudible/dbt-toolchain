@@ -48,9 +48,7 @@ def test_extract_raw_binary_stages_and_sets_exec_bit(tmp_path):
         checksum_url=None,
         ext_map={"default": ""},
     )
-    pkg = Package(
-        "rustup-init", "linux", {"source": "rust", "set-executable": True}, src
-    )
+    pkg = Package("rustup-init", "linux", {"source": "rust", "set-executable": True}, src)
     extract.extract_target(BuildTarget(pkg, "x86_64"), paths)
 
     staged = paths.staging_dir("linux", "x86_64") / "rustup-init" / "rustup-init"

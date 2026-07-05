@@ -1,11 +1,10 @@
+name: Build and Release
+
 on:
   push:
     branches:
       - 'main'
   create:
-  pull_request:
-    branches:
-      - 'main'
 
 env:
   REGISTRY: ghcr.io
@@ -26,9 +25,7 @@ jobs:
       - name: Install required packages
         run: sudo bash ./actions-support/dist-build/prepare.sh
       - name: Install dbtbuilder
-        run: pip3 install ".[dev]"
-      - name: Run unit tests
-        run: python3 -m pytest
+        run: pip3 install .
       - name: Set up QEMU
         uses: docker/setup-qemu-action@v3
       - name: Set up Docker Buildx

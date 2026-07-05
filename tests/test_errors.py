@@ -14,9 +14,7 @@ def test_version_is_a_string():
     assert isinstance(__version__, str)
 
 
-@pytest.mark.parametrize(
-    "exc", [ConfigError, DownloadError, ChecksumMismatch, ExtractError]
-)
+@pytest.mark.parametrize("exc", [ConfigError, DownloadError, ChecksumMismatch, ExtractError])
 def test_all_errors_subclass_base(exc):
     assert issubclass(exc, DbtBuilderError)
     with pytest.raises(DbtBuilderError):
