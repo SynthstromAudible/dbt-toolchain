@@ -33,6 +33,24 @@ def test_source_defaults_checksum_type_to_sha256():
     assert cfg.sources["xpack"].checksum_type == "sha256"
 
 
+def test_source_parses_bundle_subdir():
+    raw = {
+        **RAW,
+        "sources": {
+            **RAW["sources"],
+            "cmake-macos": {
+                "url": "http://c/cmake-{version}-macos-universal.{ext}",
+                "ext": {"default": "tar.gz"},
+                "bundle_subdir": "CMake.app/Contents",
+            },
+        },
+    }
+    cfg = parse_config(raw)
+    assert cfg.sources["cmake-macos"].bundle_subdir == "CMake.app/Contents"
+    # Sources without the key default to None.
+    assert cfg.sources["xpack"].bundle_subdir is None
+
+
 def test_package_with_top_level_source_expands_to_all_platforms():
     cfg = parse_config(RAW)
     cmake = [p for p in cfg.packages if p.name == "cmake"]

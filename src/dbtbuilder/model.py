@@ -14,6 +14,9 @@ class Source:
     arch_map: dict[str, str] = field(default_factory=dict)
     ext_map: dict[str, str] = field(default_factory=dict)
     platform_map: dict[str, str] = field(default_factory=dict)
+    # Nested subdir whose contents are promoted to the package root after
+    # extraction — e.g. "CMake.app/Contents" for Kitware's macOS app bundle.
+    bundle_subdir: str | None = None
 
 
 @dataclass(frozen=True)

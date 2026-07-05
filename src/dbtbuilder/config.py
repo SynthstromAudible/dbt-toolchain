@@ -29,6 +29,7 @@ def parse_config(raw: dict[str, Any]) -> Config:
             arch_map=d.get("arch") or {},
             ext_map=d.get("ext") or {},
             platform_map=d.get("platform") or {},
+            bundle_subdir=d.get("bundle_subdir"),
         )
         for name, d in raw["sources"].items()
     }

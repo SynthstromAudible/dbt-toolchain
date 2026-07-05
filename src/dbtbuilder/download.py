@@ -14,7 +14,9 @@ def download_target(target: BuildTarget, paths: BuildPaths) -> None:
     checksum_url = None
     if source.checksum_url:
         checksum_url = source.checksum_url.format(
-            url=url, url_no_ext=os.path.splitext(url)[0]
+            url=url,
+            url_no_ext=os.path.splitext(url)[0],
+            **target.package.details,
         )
 
     filepath = paths.cache / target.cache_filename()

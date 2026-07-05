@@ -1,0 +1,10 @@
+# Paths are relative to the CMake.app bundle root (the commonprefix of the
+# macOS tarball). Keep only the CLI tools and their data: the cmake/ctest/cpack
+# binaries link system frameworks only (verified: no LC_RPATH into the bundle),
+# so dropping Qt Frameworks, PlugIns, cmake-gui, Resources and docs is safe and
+# removes most of the bundle's size. The bundle_subdir remap then lifts these to
+# cmake/bin and cmake/share to match Linux/Windows.
+Contents/bin/cmake
+Contents/bin/cpack
+Contents/bin/ctest
+Contents/share

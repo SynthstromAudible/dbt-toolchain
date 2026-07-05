@@ -45,6 +45,43 @@ def extract_target(
     if force_reextract or not dest_path.exists():
         extractor(filepath, dest_path, include_file)
         shift_subdir_up(package.name, dest_path.parent)
+        if source.bundle_subdir:
+            lift_bundle_subdir(dest_path, source.bundle_subdir)
+
+
+def _load_include_patterns(include_list: Path) -> list[str]:
+    """Read an include file: stripped lines, skipping blanks and ``#`` comments.
+
+    Skipping blanks matters: an empty line would otherwise become a bare root
+    prefix that keeps every member, silently defeating the filter.
+    """
+    with open(include_list) as f:
+        return [s for line in f if (s := line.strip()) and not s.startswith("#")]
+
+
+def _is_included(name: str, patterns: list[str]) -> bool:
+    """True when ``name`` equals or is nested under an include pattern.
+
+    Prefix matching (with a ``/`` boundary) lets a directory pattern keep its
+    whole subtree — e.g. ``share`` keeps ``share/cmake-4.3/Modules/…`` — without
+    enumerating every file, while ``share`` still won't match ``shareX``.
+    """
+    return any(name == p or name.startswith(p + "/") for p in patterns)
+
+
+def lift_bundle_subdir(dest_path: Path, subdir: str) -> None:
+    """Promote a nested subdir's contents up to the package root.
+
+    Kitware's macOS cmake ships as an app bundle, so after the usual wrapper
+    shift the payload sits under ``CMake.app/Contents`` rather than directly in
+    the package dir. Moving every child of that subdir up together keeps
+    siblings like ``bin`` and ``share`` adjacent, so cmake's ``../share`` module
+    lookups still resolve. The now-empty wrapper is removed.
+    """
+    nested = dest_path / subdir
+    for child in nested.iterdir():
+        child.rename(dest_path / child.name)
+    shutil.rmtree(dest_path / Path(subdir).parts[0])
 
 
 def shift_subdir_up(parent_dir: str, dest_path: Path) -> None:
@@ -67,9 +104,10 @@ def untar_archive(tar_file: Path, dest_dir: Path, include_list: Path) -> None:
             members = tar.getmembers()
             if include_list.is_file():
                 root_dir = os.path.commonprefix(tar.getnames())
-                with open(include_list) as f:
-                    includes = [f"{root_dir}/{line.strip()}" for line in f]
-                members = [m for m in members if m.name in includes]
+                includes = [
+                    f"{root_dir}/{s}" for s in _load_include_patterns(include_list)
+                ]
+                members = [m for m in members if _is_included(m.name, includes)]
 
             with tqdm(total=len(members), desc=tar_file.name, unit="files") as pbar:
                 for member in members:
@@ -91,16 +129,20 @@ def unzip_archive(zip_file: Path, dest_dir: Path, include_list: Path) -> None:
             zip_includes: list[str] = []
             if include_list.is_file():
                 root_dir = os.path.commonprefix(zip_ref.namelist())
-                with open(include_list) as f:
-                    zip_includes = [f"{root_dir}{line.strip()}" for line in f]
+                zip_includes = [
+                    f"{root_dir}{s}" for s in _load_include_patterns(include_list)
+                ]
 
-            total = len(zip_includes) if zip_includes else len(zip_ref.infolist())
-            with tqdm(total=total, desc=zip_file.name, unit="files") as pbar:
-                for info in zip_ref.infolist():
-                    if not zip_includes or info.filename in zip_includes:
-                        zip_ref.extract(info, dest_dir)
-                        pbar.update(1)
-                        pbar.refresh()
+            members = [
+                info
+                for info in zip_ref.infolist()
+                if not zip_includes or _is_included(info.filename, zip_includes)
+            ]
+            with tqdm(total=len(members), desc=zip_file.name, unit="files") as pbar:
+                for info in members:
+                    zip_ref.extract(info, dest_dir)
+                    pbar.update(1)
+                    pbar.refresh()
                 pbar.refresh()
     except (zipfile.BadZipFile, OSError) as e:
         raise ExtractError(f"failed to extract {zip_file.name}: {e}") from e
