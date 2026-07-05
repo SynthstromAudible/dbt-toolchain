@@ -23,9 +23,7 @@ def download_file(url: str, dest: Path) -> Path:
     dest.parent.mkdir(parents=True, exist_ok=True)
     block_size = 1024
     try:
-        with requests.get(
-            url, stream=True, allow_redirects=True, timeout=_TIMEOUT
-        ) as response:
+        with requests.get(url, stream=True, allow_redirects=True, timeout=_TIMEOUT) as response:
             response.raise_for_status()
             file_size = int(response.headers.get("Content-Length", 0))
             with tqdm(

@@ -19,22 +19,12 @@ def _tiny_config():
 
 def test_only_download_runs_download_and_nothing_else(monkeypatch, tmp_path):
     calls = []
-    monkeypatch.setattr(
-        orchestrate.download, "download_target", lambda t, p: calls.append("dl")
-    )
-    monkeypatch.setattr(
-        orchestrate.extract, "extract_target", lambda *a, **k: calls.append("ex")
-    )
-    monkeypatch.setattr(
-        orchestrate.wheels, "add_python_lib", lambda *a, **k: calls.append("wh")
-    )
-    monkeypatch.setattr(
-        orchestrate.package, "package_dist", lambda *a, **k: calls.append("pk")
-    )
+    monkeypatch.setattr(orchestrate.download, "download_target", lambda t, p: calls.append("dl"))
+    monkeypatch.setattr(orchestrate.extract, "extract_target", lambda *a, **k: calls.append("ex"))
+    monkeypatch.setattr(orchestrate.wheels, "add_python_lib", lambda *a, **k: calls.append("wh"))
+    monkeypatch.setattr(orchestrate.package, "package_dist", lambda *a, **k: calls.append("pk"))
 
-    orchestrate.run_build(
-        _tiny_config(), BuildPaths.from_root(tmp_path), only="download"
-    )
+    orchestrate.run_build(_tiny_config(), BuildPaths.from_root(tmp_path), only="download")
 
     assert calls == ["dl", "dl"]  # two targets, download only
 
